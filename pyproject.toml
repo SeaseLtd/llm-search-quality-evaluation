@@ -1,0 +1,54 @@
+[project]
+name = "llm-search-quality-evaluation"
+version = "0.1.0"
+description = "A suite of tools for search quality evaluation!"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+authors = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+requires-python = ">=3.10"
+
+# Shared dependencies + import of workspace modules
+dependencies = [
+    "requests>=2.32.4",
+    "langchain-core>=0.3.68",
+    "langchain-openai>=0.3.27",
+    "langchain-google-genai>=2.1.7",
+    "pydantic>=2.0",
+    "pyyaml>=6.0.2",
+    "python-dotenv>=1.1.1",
+    "jsonlines>=4.0.0",
+    "mteb>=0.1.0"
+]
+
+# mypy/ruff/pytest
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+    "mypy-extensions>=1.1.0",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.10",
+    "typing-extensions>=4.14.1",
+    "types-PyYAML>=6.0.2",
+    "types-requests>=2.32.4",
+    "setuptools>=80.9.0"
+]
+
+[tool.pytest.ini_options]
+addopts = "-v --tb=short"
+
+[project.scripts]
+dataset_generator = "llm_search_quality_evaluation.dataset_generator.main:main"
+embedding_model_evaluator = "llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.main:main"
+approximate_search_evaluator = "llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.main:main"
+
+
+[build-system]
+requires = ["uv_build>=0.8.13,<0.9.0"]
+build-backend = "uv_build"
