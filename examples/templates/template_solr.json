@@ -3,6 +3,6 @@
   "defType": "edismax",
   "qf": "title description content",
   "mm": 1,
-  "rows": 10,
+  "rows": 100,
   "fl": "id,title,description,content,score"
 }
