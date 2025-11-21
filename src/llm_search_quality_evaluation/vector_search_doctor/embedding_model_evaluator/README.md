@@ -22,7 +22,7 @@ uv sync --extra dev
 ### Generate an MTEB Dataset in IR Task Format
 
 ```bash
-cd embedding_model_evaluator
+cd src/vector_search_doctor/embedding_model_evaluator
 
 # Generate an MTEB dataset in IR task format
 uv run scripts/mteb_retrieval_dataset_generator.py --dataset "nfcorpus" --split "test"
@@ -57,7 +57,9 @@ uv run embedding_model_evaluator --config <path-to-config-yaml>
 * `--negatives-per-query`: Number of random negatives per query (0 = disabled)
 * `--seed`: Random seed (default 42)
 
-**Note:** by default the qrels.json of IR dataset **does not** include negative samples -> if we want to include them (simple negative-mining), we need to use the `--negatives-per-query` parameter.
+> **Note:** by default the qrels.json of IR dataset **does not** include negative samples -> if we want to include them 
+> (simple negative-mining), we need to use the `--negatives-per-query` parameter.
+
 ---
 
 ## `embedding_model_evaluator` Config Parameters - IR dataset
@@ -94,20 +96,24 @@ uv run embedding_model_evaluator --config <path-to-config-yaml>
 
   * **Advantage:** Guaranteed to return the true nearest neighbors (limited only by embedding precision).
   * **Drawback:** Computationally expensive and scales poorly for large datasets.
-=======
+
 This tool provide a flexible tool to test a HuggingFace embedding model to ensure that works as expected with exact
 vector search.
 
 ### Exact Vector Search vs. Approximate Vector Search
 
-- **Exact Vector Search**, by contrast here we compute the distance between every query and every document in the dataset (brute-force). This guarantees finding the "true" nearest neighbors (limited to the embedding model precision on the domain), but is computationally expensive and scales worse with dataset size.
-- **Approximate Vector Search** uses a proxy to score a subset of documents considered *similar* via a pre-filtering stage. Techniques like ANN (Approximate Nearest Neighbors) rely on precomputed structures in the index (e.g., HNSW, IVF) to accelerate retrieval at the cost of some accuracy.
+- **Exact Vector Search**, by contrast here we compute the distance between every query and every document in the 
+dataset (brute-force). This guarantees finding the "true" nearest neighbors (limited to the embedding model precision on
+the domain), but is computationally expensive and scales worse with dataset size.
+- **Approximate Vector Search** uses a proxy to score a subset of documents considered *similar* via a pre-filtering 
+stage. Techniques like ANN (Approximate Nearest Neighbors) rely on precomputed structures in the index (e.g., HNSW, IVF)
+to accelerate retrieval at the cost of some accuracy.
 
 
 ### **Input parameters** for configuration file
 
-To be able to run the Embedding Model Evaluator, a configuration file must be provided. The go-to way we suggest to take is 
-to modify the [configuration file](../../../../examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml).
+To be able to run the Embedding Model Evaluator, a configuration file must be provided. The go-to way we suggest to take
+is to modify the [configuration file](../../../../examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml).
 
 A detailed description of the parameter that you must provide in the configuration file is the following:
 

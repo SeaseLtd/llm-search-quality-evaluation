@@ -1,4 +1,4 @@
-# Rated Ranking Evaluator Tools (RRE)
+# LLM Search Quality Evaluation
 
 ## Overview
 - Dataset Generator
@@ -43,7 +43,6 @@ uv sync
 
 # install development dependencies as well (e.g., mypy and ruff)
 uv sync --group dev
-```
 
 # remove all cached packages
 uv cache clean
@@ -52,19 +51,18 @@ uv cache clean
 ## Running Dataset Generator
 
 Before running the command below, you need to have running search engine instance 
-(`solr`/`opensearch`/`elasticsearch`/`vespa`). This can be done even with the test collections in folder 
-[docker-services](docker-services/README.md). 
+(`solr`/`opensearch`/`elasticsearch`/`vespa`). 
 
 For a detailed description to fill your configuration file (e.g., 
-[Config](configs/dataset_generator/dataset_generator_config.yaml)) you can look at the Dataset Generator 
-[README](docs/dataset_generator/README.md).
+[Config](examples/configs/dataset_generator/dataset_generator_config.yaml)) you can look at the Dataset Generator 
+[README](src/llm_search_quality_evaluation/dataset_generator/README.md).
 
 Execute the main script via CLI, pointing to your DAGE configuration file:
 ```bash
 uv run dataset_generator --config <path-to-config-yaml>
 ```
 By default, the CLI is pointing to the 
-[file](examples/configs/dataset_generator/dataset_generator_config.yaml) inside the `configs/` directory.
+[file](examples/configs/dataset_generator/dataset_generator_config.yaml) inside the `examples/configs/` directory.
 
 To know more about all the possible CLI parameters, execute:
 ```bash
@@ -81,8 +79,9 @@ Execute the main script via CLI, pointing to configuration file:
 ```bash
 uv run embedding_model_evaluator --config <path-to-config-yaml>
 ```
-By default, the CLI is pointing to the  
-[configs/](examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml) inside the `configs/` directory.
+By default, the CLI is pointing to the 
+[file](examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml) inside 
+the `examples/configs/` directory.
 
 ## Running Approximate Search Evaluator
 For a detailed description to fill in configuration file (e.g., 
@@ -93,7 +92,8 @@ For a detailed description to fill in configuration file (e.g.,
 uv run approximate_search_evaluator --config <path-to-config-yaml>
 ```
 By default, the CLI is pointing to the 
-[file](examples/configs/vector_search_doctor/approximate_search_evaluator/approximate_search_evaluator_config.yaml) inside the `configs/` directory.
+[file](examples/configs/vector_search_doctor/approximate_search_evaluator/approximate_search_evaluator_config.yaml) 
+inside the `examples/configs/` directory.
 
 ## Running tests
 

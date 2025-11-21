@@ -9,8 +9,10 @@ The main purpose of this module is to evaluate, given the queries' embeddings co
 
 ## Setup configuration file
 
-Create a [config.yaml](../../../../examples/configs/dataset_generator/dataset_generator_config.yaml) file (or modify the existing one) 
-in the `approximate_search_evaluator` directory. This file contains all the information needed to set up RRE for 
+Create a [config.yaml](../../../../examples/configs/dataset_generator/dataset_generator_config.yaml) file (or modify the
+existing one). This file contains all the information needed to set up RRE to test our the search engine ANN 
+implementation.
+
 The parameters needed are:
 
 > - **query_template**: Path pointing to a template file for queries with a placeholder for keywords 
