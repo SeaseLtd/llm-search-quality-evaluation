@@ -35,9 +35,6 @@ instructions [here](https://docs.astral.sh/uv/getting-started/installation/)
 
 First, create a virtual environment using `uv` following the file `pyproject.toml`. To do so, just execute:
 ```bash
-# place yourself in the rre-tools folder
-cd rre-tools
-
 # install dependencies (for users)
 uv sync
 
