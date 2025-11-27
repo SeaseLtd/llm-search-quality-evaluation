@@ -4,6 +4,7 @@ MTEB execution pipeline entrypoint for Module 2.
 
 - Loads MTEB tasks in-memory (no export to disk required).
 - Evaluates either Retrieval or Re-ranking using a cached-embedding wrapper.
+- Compute MTEB Leaderboard model comparison and add them to the custom task result file.
 - Writes embeddings to disk only after evaluation (optional but kept as before).
 - Dataset/split/model/task are driven by Config.
 """
@@ -74,34 +75,106 @@ def _build_task(task_name: str, dataset_name: str, split: str) -> Any:
         return task
 
 
-def _get_mteb_leaderboard_avg_main_score(model_name: str, task_type: str) -> float:
-    b = mteb.get_benchmark("MTEB(eng, v2)")
-    task = [t for t in b.tasks if t.metadata.type == task_type]
-    # load results from https://github.com/embeddings-benchmark/results
-    results = mteb.load_results(models=[model_name], tasks=task).join_revisions()
+def _add_mteb_leaderboard_comparison_metrics(file_path: Path, mteb_comparison_metrics: dict) -> None:
+    """
+    1. Read from custom task result json file (file_path)
+    2. Get custom task main_score
+    3. Model main_score diffs : custom task main_score vs MTEB Leaderboard model avg_main_score
+    4. Raise a warning if user model is significantly worse, 20% performance gap
+    5. Add mteb comparison metrics to the file
+    """
 
-    scores: list[float] = []
-    for model_results in results.model_results:
-        for task_result in model_results.task_results:
-            val = task_result.get_score()
-            if isinstance(val, (int, float)):
-                scores.append(float(val))
-    if len(scores) > 0:
-        avg_main_score: float = sum(scores) / len(scores)
-        log.debug(f"Fetched average main score from MTEB leaderboard {avg_main_score}")
-        return avg_main_score
-    return 0.0
-
-
-def _append_mteb_leaderboard_score(file_path: Path, avg_main_score: float) -> None:
+    # 1. Read from custom task result json file (file_path)
     with file_path.open("r", encoding="utf-8") as file:
         data = json.load(file)
 
-    data["avg_main_score_mteb_leaderboard"] = avg_main_score
+    # 2. Get user model's computed main_score on custom dataset
+    user_model_main_score = data["scores"]["test"][0]["main_score"]
+
+    # Convert to percentage
+    user_model_main_score *= 100
+
+    # 3. Model main_score diffs : custom task main_score vs MTEB Leaderboard model avg_main_score
+    top_avg_main_score = mteb_comparison_metrics["top_model_avg_main_score"]
+    top_model_name = mteb_comparison_metrics["top_model"]
+    user_model_name = mteb_comparison_metrics["user_model"]
+    user_model_avg_main_score = mteb_comparison_metrics["user_model_mteb_avg_main_score"]
+
+    model_main_score_diff = (f"Your model's main_score on custom task main_score={user_model_main_score:.2f} vs. "
+                             f"MTEB leaderboard shown avg_main_score={user_model_avg_main_score:.2f}")
+    mteb_comparison_metrics["user_model_custom_task_main_score"] = user_model_main_score
+    mteb_comparison_metrics["model_main_score_diff"] = model_main_score_diff
+
+    # 4. Raise a warning if user model is significantly worse, 20% performance gap
+    threshold_percent = 20.0
+    if top_avg_main_score > 0:
+        diff = top_avg_main_score - user_model_main_score
+        # Calculate how much worse (in %) user model is compared to the top model
+        diff_percent = (diff / top_avg_main_score) * 100
+        if diff_percent > threshold_percent:
+            log.debug(f"Model performance exceeded threshold={threshold_percent}%, warning added to custom task result")
+            warning = f"Your model={user_model_name} is {diff_percent:.2f}% worse than the top model={top_model_name}."
+            mteb_comparison_metrics["warning"] = warning
+
+    # 5. Add mteb comparison metrics to the file
+    data["mteb_leaderboard_model_comparison"] = mteb_comparison_metrics
 
     with file_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2, ensure_ascii=False)
-        log.debug(f"Added the average main score {avg_main_score} to the file {file_path}")
+        log.debug(f"Added MTEB leaderboard comparison metrics to {file_path}")
+
+
+def compute_mteb_leaderboard_comparison(model_name: str, task_type: str) -> dict:
+    """
+    1. Fetch mteb model results from https://github.com/embeddings-benchmark/results
+    2. Calculate averages for all models.
+    3. Find the top #1 model for the given task based on avg_main_score.
+    4. Return user model (model_name), top model avg_main_scores.
+    """
+
+    benchmark = mteb.get_benchmark("MTEB(eng, v2)")
+    tasks = [t for t in benchmark.tasks if t.metadata.type == task_type]
+    # include "mostly complete" tasks for the models, so excluding models which are run on a few tasks
+    num_tasks = len(tasks) * 0.7
+
+    # 1. Fetch mteb results from https://github.com/embeddings-benchmark/results into ~/.cache/mteb/results
+    all_results = mteb.load_results(tasks=tasks).join_revisions()
+
+    # 2. Calculate averages for all models.
+    model_averages = {}  # <model_name, avg_main_score>
+    for model_res in all_results.model_results:
+        total_score = 0
+        count = 0
+        for task_obj in tasks:
+            task_name = task_obj.metadata.name
+            task_result = next((res for res in model_res.task_results if res.task_name == task_name), None)
+            if task_result:
+                main_score = task_result.get_score()
+                if main_score <= 1.0:  # in case if task's main_score is in [0, 1] ratio
+                    main_score *= 100
+                total_score += main_score
+                count += 1
+            else:
+                pass
+        if count >= num_tasks:
+            model_averages[model_res.model_name] = float(total_score / count)
+
+    # 3. Find the top #1 model for the given task based on avg_main_score.
+    top_model_name: str = "None"
+    top_avg_main_score: float = 0.0
+    for name, score in model_averages.items():
+        if score > top_avg_main_score:
+            top_avg_main_score = score
+            top_model_name = name
+
+    user_avg_main_score = model_averages.get(model_name, 0.0)
+
+    return {
+        "top_model": top_model_name,
+        "top_model_avg_main_score": top_avg_main_score,
+        "user_model": model_name,
+        "user_model_mteb_avg_main_score": user_avg_main_score
+    }
 
 
 def main() -> None:
@@ -140,7 +213,7 @@ def main() -> None:
         log.error("Failed to build MTEB task: %s", e)
         raise ValueError("Failed to build MTEB task.")
 
-    # --- Evaluation (in-memory) ---
+    # --- MTEB Evaluation ---
     log.info("Starting MTEB evaluation...")
     start = time.time()
     evaluation = mteb.MTEB(tasks=[task])
@@ -155,16 +228,18 @@ def main() -> None:
     log.info("Finished MTEB evaluation.")
     log.info(f"Time took for MTEB evaluation: {(end - start) / 60:.2f} minutes")
 
-    log.info("Adding mteb leaderboard average main score...")
+    log.info("Computing MTEB Leaderboard comparison metrics...")
 
     # task result is in {output_folder} / {model_name} / {model_revision} / {task_name}.json
     task_result_path: Path = (config.output_dest / model_name_additional_path /
                               mteb.get_model_meta(config.model_id).revision / f"{task_name}.json")
-    avg_main_score: float = _get_mteb_leaderboard_avg_main_score(model_name=config.model_id,
-                                                                 task_type=config.task_to_evaluate.capitalize())
-    _append_mteb_leaderboard_score(file_path=task_result_path, avg_main_score=avg_main_score)
 
-    # --- Optional: write embeddings (kept for parity with previous behavior) ---
+    # --- Compute MTEB Leaderboard model comparison and add them to the custom task result file ---
+    mteb_comparison_metrics: dict = compute_mteb_leaderboard_comparison(config.model_id,
+                                                                        config.task_to_evaluate.capitalize())
+    _add_mteb_leaderboard_comparison_metrics(task_result_path, mteb_comparison_metrics)
+
+    # --- Write embeddings ---
     writer = EmbeddingWriter(
         corpus_path=config.corpus_path,
         queries_path=config.queries_path,
