@@ -106,13 +106,13 @@ def _add_mteb_leaderboard_comparison_metrics(file_path: Path, mteb_comparison_me
     mteb_comparison_metrics["model_main_score_diff"] = model_main_score_diff
 
     # 4. Raise a warning if user model is significantly worse, 20% performance gap
-    THRESHOLD_PERCENT = 20.0
+    threshold_percent = 20.0
     if top_avg_main_score > 0:
         diff = top_avg_main_score - user_model_main_score
         # Calculate how much worse (in %) user model is compared to the top model
         diff_percent = (diff / top_avg_main_score) * 100
-        if diff_percent > THRESHOLD_PERCENT:
-            log.debug(f"Model performance exceeded threshold={THRESHOLD_PERCENT}%, warning added to custom task result")
+        if diff_percent > threshold_percent:
+            log.debug(f"Model performance exceeded threshold={threshold_percent}%, warning added to custom task result")
             warning = f"Your model={user_model_name} is {diff_percent:.2f}% worse than the top model={top_model_name}."
             mteb_comparison_metrics["warning"] = warning
 
