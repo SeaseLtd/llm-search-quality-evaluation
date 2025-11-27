@@ -26,9 +26,6 @@ jobs:
     name: Linting (ruff)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: rre-tools
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,7 +39,7 @@ jobs:
         with:
           path: |
             ~/.cache/uv
-            rre-tools/.venv
+            .venv
           key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }} # Common cache: key = hash OS + deps
           restore-keys: |
             ${{ runner.os }}-uv-
@@ -55,9 +52,6 @@ jobs:
     name: Type Checking (mypy)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: llm-search-quality-evaluation
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -84,9 +78,6 @@ jobs:
     name: Unit Tests (pytest)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: llm-search-quality-evaluation
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
