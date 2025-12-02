@@ -17,7 +17,7 @@ def test_good_config_solr__expects__all_parameters_read(resource_folder):
 
     assert config.id_field == "new_id"
     assert config.query_placeholder == "$query_placeholder"
-    assert config.search_engine_version == "4.10.4"
+    assert config.search_engine_version == "9.8.1"
     assert config.ratings_path == Path("tests/resources/approximate_search_evaluator/ratings.json")
     assert config.embeddings_folder == Path("tests/resources/approximate_search_evaluator/embeddings")
     assert config.output_destination == Path("solr_resources")
@@ -43,7 +43,7 @@ def test_missing_optional_solr_field_values__expects__all_defaults_read(resource
     assert config.query_placeholder == "$query"
 
     assert hasattr(config, "search_engine_version")
-    assert config.search_engine_version == "9.9.0"
+    assert config.search_engine_version == "9.8.1"
 
     assert hasattr(config, "ratings_path")
     assert config.ratings_path is None
@@ -83,7 +83,7 @@ def test_good_config_elasticsearch__expects__all_parameters_read(resource_folder
 
     assert config.id_field == "new_id"
     assert config.query_placeholder == "$query_placeholder"
-    assert config.search_engine_version == "6.5.4"
+    assert config.search_engine_version == "7.5.0"
     assert config.ratings_path == Path("tests/resources/approximate_search_evaluator/ratings.json")
     assert config.embeddings_folder == Path("tests/resources/approximate_search_evaluator/embeddings")
     assert config.output_destination == Path("elastic_resources")
@@ -109,7 +109,7 @@ def test_missing_optional_elasticsearch_field_values__expects__all_defaults_read
     assert config.query_placeholder == "$query"
 
     assert hasattr(config, "search_engine_version")
-    assert config.search_engine_version == "7.4.2"
+    assert config.search_engine_version == "7.5.0"
 
     assert hasattr(config, "ratings_path")
     assert config.ratings_path is None
