@@ -2,10 +2,10 @@ import json
 import logging
 from typing import Optional
 
-from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ValidationError
 
+from llm_search_quality_evaluation.dataset_generator.llm.llm_provider_factory import LazyLLM
 from llm_search_quality_evaluation.dataset_generator.models.query_response import LLMQueryResponse
 from llm_search_quality_evaluation.dataset_generator.models.score_response import LLMScoreResponse
 from llm_search_quality_evaluation.shared.models.document import Document
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 class LLMService:
-    def __init__(self, chat_model: BaseChatModel):
+    def __init__(self, chat_model: LazyLLM):
         self.chat_model = chat_model
 
     @staticmethod
