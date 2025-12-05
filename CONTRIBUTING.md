@@ -47,8 +47,9 @@ We use the standard GitHub "Fork & Pull" workflow.
 Fork our repo and once you have changes, commit them to your fork, then create a Pull Request (PR) to our repo.
 
 Before submitting a PR, please ensure:
-* [ ] Unit test(s) is/are added and all tests do pass
-* [ ] If you added a new feature, you have updated the README or relevant documentation.
+* [ ] Add unit test(s) and make sure you run all tests and they do pass.
+* [ ] If you added a new feature, update the README or relevant documentation.
+* [ ] Run `mypy` and `ruff` for type checking and finding issues/formatting.
 
 ## Reporting Issues
 
