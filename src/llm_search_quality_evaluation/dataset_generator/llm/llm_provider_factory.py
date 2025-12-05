@@ -2,12 +2,13 @@
 llm_provider_factory.py
 
 Provides a simple Factory for creating LangChain ChatModel instances
-and currently only 2 LLMs - openai and gemini are supported in the factory.
+with lazy initialization for the 2 currently supported LLMs - openai and gemini.
 
 """
 
 import logging
 import os
+from typing import Optional
 
 from dotenv import load_dotenv
 from langchain_core.language_models import BaseChatModel
@@ -60,11 +61,29 @@ def build_gemini(config: LLMConfig) -> BaseChatModel:
     )
 
 
+class LazyLLM:
+    def __init__(self, config: LLMConfig):
+        self.config = config
+        self._llm: Optional[BaseChatModel] = None
+
+    @property
+    def llm(self) -> BaseChatModel:
+        if self._llm is None:
+            log.info("Initializing LLM for the first time: provider=%s, model=%s",
+                    self.config.name, self.config.model)
+            self._llm = LLMServiceFactory.build(self.config)
+        return self._llm
+
+    def __getattr__(self, name):  # type: ignore[no-untyped-def]
+        return getattr(self.llm, name)
+
+
 class LLMServiceFactory:
     PROVIDER_REGISTRY = {
         "openai": build_openai,
         "gemini": build_gemini,
     }
+    _cache: dict[str, LazyLLM] = {}
 
     @classmethod
     def build(cls, config: LLMConfig) -> BaseChatModel:
@@ -73,5 +92,17 @@ class LLMServiceFactory:
         if provider_name not in cls.PROVIDER_REGISTRY:
             log.error("Unsupported LLM provider requested: %s", provider_name)
             raise ValueError(f"Unsupported provider: {provider_name}")
-        log.info("Selected LLM provider=%s, model=%s", provider_name, provider_model)
+        log.info("Building LLM provider=%s, model=%s", provider_name, provider_model)
         return cls.PROVIDER_REGISTRY[provider_name](config)
+
+    @classmethod
+    def build_lazy(cls, config: LLMConfig) -> LazyLLM:
+        cache_key = f"{config.name}:{config.model}"
+
+        if cache_key not in cls._cache:
+            log.debug("Creating lazy LLM wrapper for %s", cache_key)
+            cls._cache[cache_key] = LazyLLM(config)
+        else:
+            log.debug("Reusing cached lazy LLM wrapper for %s", cache_key)
+
+        return cls._cache[cache_key]

@@ -3,12 +3,13 @@ from __future__ import annotations
 # ------ temporary import for corpus.json bug workaround ------
 import json
 from pathlib import Path
+
+from llm_search_quality_evaluation.dataset_generator.llm.llm_provider_factory import LazyLLM
 from llm_search_quality_evaluation.shared.utils import _to_string
 import argparse
 # -------------------------------------------------------------
 
 from typing import List
-from langchain_core.language_models import BaseChatModel
 from logging import Logger, getLogger
 
 # project imports
@@ -138,7 +139,7 @@ def main() -> None:
         search_engine_type=config.search_engine_type,
         endpoint=config.search_engine_collection_endpoint
     )
-    llm: BaseChatModel = LLMServiceFactory.build(LLMConfig.load(config.llm_configuration_file))
+    llm: LazyLLM = LLMServiceFactory.build_lazy(LLMConfig.load(config.llm_configuration_file))
     service: LLMService = LLMService(chat_model=llm)
     writer: AbstractWriter = WriterFactory.build(writer_config)
 
