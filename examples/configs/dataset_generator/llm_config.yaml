@@ -6,8 +6,10 @@ name: openai
 # Chat model name
 model: gpt-5-nano-2025-08-07
 
-# Maximum number of tokens the model may return
-max_tokens: 100000
+# Reasoning effort parameter of the LLM: avoid to disable reasoning
+# Since the different LLM have different levels of reasoning, you must refer to the langchain documentation. If a
+# non-valid level is sent, then the reasoning is set to the lowest possible (but still enabled)
+reasoning_effort: low
 
 # Environment variable where LLM API key is stored
 api_key_env: OPENAI_API_KEY

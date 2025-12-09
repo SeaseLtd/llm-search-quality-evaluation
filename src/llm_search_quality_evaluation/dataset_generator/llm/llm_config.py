@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 class LLMConfig(BaseModel):
     name: str
     model: str
-    max_tokens: int = Field(default=512, gt=0)
+    reasoning_effort: Optional[str] = Field(default=None, description="The reasoning effort of the model")
     api_key_env: Optional[str] = None
 
     @classmethod
