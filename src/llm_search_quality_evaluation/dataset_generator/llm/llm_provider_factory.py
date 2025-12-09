@@ -22,7 +22,6 @@ log = logging.getLogger(__name__)
 
 def build_openai(config: LLMConfig) -> BaseChatModel:
     load_dotenv()  # load .env file
-    available_reasoning_effort = ["minimal", "low", "medium", "high"]
     key = os.getenv(config.api_key_env or "OPENAI_API_KEY")
     if not key:
         log.error("OpenAI API key not set %s in the env", config.api_key_env)
@@ -38,13 +37,12 @@ def build_openai(config: LLMConfig) -> BaseChatModel:
         return ChatOpenAI(
             model=config.model,
             api_key=SecretStr(key),
-            reasoning_effort=config.reasoning_effort if config.reasoning_effort in available_reasoning_effort else "minimal",
+            reasoning_effort=config.reasoning_effort,
         )
 
 
 def build_gemini(config: LLMConfig) -> BaseChatModel:
     load_dotenv()  # load .env file
-    available_reasoning_effort = ["low", "high"]
     key = os.getenv(config.api_key_env or "GOOGLE_API_KEY")
     if not key:
         log.error("Google Gemini API key not set %s in the env", config.api_key_env)
@@ -56,7 +54,7 @@ def build_gemini(config: LLMConfig) -> BaseChatModel:
         google_api_key=key,
         model_kwargs={
             "thinking_config": {
-                "thinking_level": config.reasoning_effort if config.reasoning_effort in available_reasoning_effort else "low",
+                "thinking_level": config.reasoning_effort,
             }
         }
     )
