@@ -54,7 +54,7 @@ def build_gemini(config: LLMConfig) -> BaseChatModel:
         google_api_key=key,
         model_kwargs={
             "thinking_config": {
-                "thinking_level": config.reasoning_effort,
+                "thinking_budget": config.reasoning_effort,
             }
         }
     )
