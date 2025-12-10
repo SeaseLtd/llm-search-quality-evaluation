@@ -18,15 +18,16 @@ class LLMConfig(BaseModel):
 
     @model_validator(mode="after")
     def set_reasoning_effort_defaults(self) -> "LLMConfig":
-        if self.name == "openai":
-            default_effort_mode = "minimal"
-            effort_list = ["minimal", "low", "medium", "high"]
-        else:
-            default_effort_mode = "low"
-            effort_list = ["low", "high"]
+        if self.reasoning_effort is not None:
+            if self.name == "openai":
+                default_effort_mode = "minimal"
+                effort_list = ["minimal", "low", "medium", "high"]
+            else:
+                default_effort_mode = "low"
+                effort_list = ["low", "high"]
 
-        if self.reasoning_effort not in effort_list and self.reasoning_effort is not None:
-            self.reasoning_effort = default_effort_mode
+            if self.reasoning_effort not in effort_list:
+                self.reasoning_effort = default_effort_mode
 
         return self
 
