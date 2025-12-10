@@ -1,14 +1,16 @@
 # llm model configuration
 
-# OpenAI LLM
+# LLM provider
+# Accepted values: openai, gemini
 name: openai
 
 # Chat model name
 model: gpt-5-nano-2025-08-07
 
-# Reasoning effort parameter of the LLM: avoid to disable reasoning
-# Since the different LLM have different levels of reasoning, you must refer to the langchain documentation. If a
-# non-valid level is sent, then the reasoning is set to the lowest reasoning level possible (but still enabled)
+# (Optional) Reasoning effort parameter of the LLM.
+# If reasoning_effort is not provided, the related Langchain parameter is not set.
+# If reasoning_effort is set, and its level is not found, the level is set to the lowest level for the given model.
+# Since the different LLM have different levels of reasoning, you must refer to the langchain documentation.
 reasoning_effort: minimal
 
 # Environment variable where LLM API key is stored
