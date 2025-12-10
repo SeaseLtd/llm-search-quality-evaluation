@@ -1,13 +1,17 @@
 # llm model configuration
 
-# OpenAI LLM
+# LLM provider
+# Accepted values: openai, gemini
 name: openai
 
 # Chat model name
 model: gpt-5-nano-2025-08-07
 
-# Maximum number of tokens the model may return
-max_tokens: 100000
+# (Optional) Reasoning effort parameter of the LLM.
+# If reasoning_effort is not provided, the related Langchain parameter is not set.
+# If reasoning_effort is set, and its level is not found, the level is set to the lowest level for the given model.
+# Since the different LLM have different levels of reasoning, you must refer to the langchain documentation.
+reasoning_effort: minimal
 
 # Environment variable where LLM API key is stored
 api_key_env: OPENAI_API_KEY

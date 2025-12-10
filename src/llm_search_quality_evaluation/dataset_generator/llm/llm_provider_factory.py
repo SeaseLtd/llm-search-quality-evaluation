@@ -26,13 +26,19 @@ def build_openai(config: LLMConfig) -> BaseChatModel:
     if not key:
         log.error("OpenAI API key not set %s in the env", config.api_key_env)
         raise ValueError("OpenAI API key not set.")
-    log.debug("Building OpenAI ChatModel using name=%s, model=%s, max_tokens=%s",
-              config.name, config.model, config.max_tokens)
-    return ChatOpenAI(
-        model=config.model,
-        max_tokens=config.max_tokens,  # type: ignore[arg-type]
-        api_key=SecretStr(key),
-    )
+    log.debug("Building OpenAI ChatModel using name=%s, model=%s, reasoning_effort=%s",
+              config.name, config.model, config.reasoning_effort)
+    if config.reasoning_effort is None:
+        return ChatOpenAI(
+            model=config.model,
+            api_key=SecretStr(key),
+        )
+    else:
+        return ChatOpenAI(
+            model=config.model,
+            api_key=SecretStr(key),
+            reasoning_effort=config.reasoning_effort,
+        )
 
 
 def build_gemini(config: LLMConfig) -> BaseChatModel:
@@ -41,12 +47,16 @@ def build_gemini(config: LLMConfig) -> BaseChatModel:
     if not key:
         log.error("Google Gemini API key not set %s in the env", config.api_key_env)
         raise ValueError("Google Gemini API key not set.")
-    log.debug("Building Google Gemini ChatModel using name=%s, model=%s, max_tokens=%s",
-              config.name, config.model, config.max_tokens)
+    log.debug("Building Google Gemini ChatModel using name=%s, model=%s, reasoning_effort=%s",
+              config.name, config.model, config.reasoning_effort)
     return ChatGoogleGenerativeAI(
         model=config.model,
-        max_output_tokens=config.max_tokens,
         google_api_key=key,
+        model_kwargs={
+            "thinking_config": {
+                "thinking_budget": config.reasoning_effort,
+            }
+        }
     )
 
 
