@@ -1,4 +1,5 @@
 import pytest
+from pydantic_core import ValidationError
 
 from llm_search_quality_evaluation.dataset_generator.llm import LLMConfig, LLMService
 from llm_search_quality_evaluation.dataset_generator.llm.llm_provider_factory import LazyLLM, LLMServiceFactory
@@ -24,13 +25,23 @@ def query():
 
 def test_llm_factory_lazy__expected__llm_none():
     cfg = LLMConfig(
-        name="mock_name",
+        name="openai",
         model="mock_model",
         max_tokens= 1024,
         api_key_env="mock_api_key",
     )
     llm: LazyLLM = LLMServiceFactory.build_lazy(cfg)
     assert llm._llm is None
+
+def test_llm_factory_invalid_model_name__expected__validation_error():
+    with pytest.raises(ValidationError):
+        _ = LLMConfig(
+            name="mock_provider",
+            model="mock_model",
+            max_tokens= 1024,
+            api_key_env="mock_api_key",
+        )
+
 
 
 @pytest.mark.parametrize("provider, model", [
