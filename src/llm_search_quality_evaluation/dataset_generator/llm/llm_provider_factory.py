@@ -83,7 +83,7 @@ class LLMServiceFactory:
         "openai": build_openai,
         "gemini": build_gemini,
     }
-    _cache: dict[str, LazyLLM] = {}
+    _cache: Optional[LazyLLM] = None
 
     @classmethod
     def build(cls, config: LLMConfig) -> BaseChatModel:
@@ -97,12 +97,10 @@ class LLMServiceFactory:
 
     @classmethod
     def build_lazy(cls, config: LLMConfig) -> LazyLLM:
-        cache_key = f"{config.name}:{config.model}"
-
-        if cache_key not in cls._cache:
-            log.debug("Creating lazy LLM wrapper for %s", cache_key)
-            cls._cache[cache_key] = LazyLLM(config)
+        if cls._cache is None:
+            log.debug("Creating lazy LLM wrapper for: provider=%s, model=%s", config.name, config.model)
+            cls._cache = LazyLLM(config)
         else:
-            log.debug("Reusing cached lazy LLM wrapper for %s", cache_key)
+            log.debug("Reusing cached lazy LLM wrapper for: provider=%s, model=%s", config.name, config.model)
 
-        return cls._cache[cache_key]
+        return cls._cache
