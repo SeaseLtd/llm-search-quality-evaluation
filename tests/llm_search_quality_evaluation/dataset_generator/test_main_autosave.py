@@ -55,7 +55,7 @@ max_tokens: 16
     # Patch factories to avoid network / heavy dependencies
     monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(build=lambda **kwargs: object()))
     monkeypatch.setattr(main_mod, "LLMConfig", types.SimpleNamespace(load=lambda _path: object()))
-    monkeypatch.setattr(main_mod, "LLMServiceFactory", types.SimpleNamespace(build=lambda _cfg: object()))
+    monkeypatch.setattr(main_mod, "LLMServiceFactory", types.SimpleNamespace(build_lazy=lambda _cfg: object()))
     monkeypatch.setattr(main_mod, "WriterFactory", types.SimpleNamespace(build=lambda _cfg: DummyWriter()))
 
     # No-op the heavy flow functions to keep the test focused on wiring
