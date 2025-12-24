@@ -168,6 +168,56 @@ export const CasesPublicSchema = {
     title: 'CasesPublic'
 } as const;
 
+export const DocumentCreateSchema = {
+    properties: {
+        fields: {
+            type: 'string',
+            minLength: 1,
+            title: 'Fields'
+        }
+    },
+    type: 'object',
+    required: ['fields'],
+    title: 'DocumentCreate'
+} as const;
+
+export const DocumentPublicSchema = {
+    properties: {
+        fields: {
+            type: 'string',
+            minLength: 1,
+            title: 'Fields'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        }
+    },
+    type: 'object',
+    required: ['fields', 'id'],
+    title: 'DocumentPublic'
+} as const;
+
+export const DocumentsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/DocumentPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'DocumentsPublic'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -235,6 +285,128 @@ export const PrivateUserCreateSchema = {
     type: 'object',
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate'
+} as const;
+
+export const QueriesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/QueryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'QueriesPublic'
+} as const;
+
+export const QueryCreateSchema = {
+    properties: {
+        query: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Query'
+        }
+    },
+    type: 'object',
+    required: ['query'],
+    title: 'QueryCreate'
+} as const;
+
+export const QueryPublicSchema = {
+    properties: {
+        query: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Query'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        case_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Case Id'
+        }
+    },
+    type: 'object',
+    required: ['query', 'id', 'case_id'],
+    title: 'QueryPublic'
+} as const;
+
+export const RatingCreateSchema = {
+    properties: {
+        llm_rating: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Llm Rating'
+        },
+        query_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Query Id'
+        },
+        document_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Document Id'
+        }
+    },
+    type: 'object',
+    required: ['llm_rating', 'query_id', 'document_id'],
+    title: 'RatingCreate'
+} as const;
+
+export const RatingPublicSchema = {
+    properties: {
+        llm_rating: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Llm Rating'
+        },
+        query_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Query Id'
+        },
+        document_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Document Id'
+        }
+    },
+    type: 'object',
+    required: ['llm_rating', 'query_id', 'document_id'],
+    title: 'RatingPublic'
+} as const;
+
+export const RatingsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/RatingPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'RatingsPublic'
 } as const;
 
 export const TokenSchema = {

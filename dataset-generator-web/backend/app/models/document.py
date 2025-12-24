@@ -6,10 +6,10 @@ from sqlalchemy import Column, JSON
 
 # Shared properties
 class DocumentBase(SQLModel):
-    fields: str = Field(min_length=1, sa_column=Column(JSON))
+    fields: dict[str, str] = Field(default={}, sa_column=Column(JSON))
 
 
-# Properties to receive on case creation
+# Properties to receive on document creation
 class DocumentCreate(DocumentBase):
     pass
 
@@ -17,12 +17,13 @@ class DocumentCreate(DocumentBase):
 # Database model, database table inferred from class name
 class Document(DocumentBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    ratings: list["Rating"] = Relationship(back_populates="document", cascade_delete=True)
 
 
 class DocumentPublic(DocumentBase):
     id: uuid.UUID
 
 
-class DocumentsPublic(SQLModel):
-    data: list[DocumentPublic]
-    count: int
+# Document with rating for nested responses
+class DocumentWithRating(DocumentPublic):
+    rating: int

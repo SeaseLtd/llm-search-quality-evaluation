@@ -3,6 +3,7 @@ import uuid
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.user import User
+from app.models.query import QueryPublic
 
 
 # Shared properties
@@ -37,6 +38,7 @@ class CasePublic(CaseBase):
     owner_id: uuid.UUID
 
 
-class CasesPublic(SQLModel):
-    data: list[CasePublic]
-    count: int
+# Detailed case view with queries
+class CaseDetailed(CasePublic):
+    queries: list[QueryPublic]
+
