@@ -9,7 +9,8 @@ class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
+    full_name: str = Field(default="", max_length=255)
+    upload_limit_mb: int = Field(default=100, gt=0)
 
 
 # Properties to receive via API on creation

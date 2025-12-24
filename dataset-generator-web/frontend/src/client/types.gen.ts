@@ -31,6 +31,20 @@ export type CaseUpdate = {
     description?: (string | null);
 };
 
+export type DocumentCreate = {
+    fields: string;
+};
+
+export type DocumentPublic = {
+    fields: string;
+    id: string;
+};
+
+export type DocumentsPublic = {
+    data: Array<DocumentPublic>;
+    count: number;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -49,6 +63,38 @@ export type PrivateUserCreate = {
     password: string;
     full_name: string;
     is_verified?: boolean;
+};
+
+export type QueriesPublic = {
+    data: Array<QueryPublic>;
+    count: number;
+};
+
+export type QueryCreate = {
+    query: string;
+};
+
+export type QueryPublic = {
+    query: string;
+    id: string;
+    case_id: string;
+};
+
+export type RatingCreate = {
+    llm_rating: number;
+    query_id: string;
+    document_id: string;
+};
+
+export type RatingPublic = {
+    llm_rating: number;
+    query_id: string;
+    document_id: string;
+};
+
+export type RatingsPublic = {
+    data: Array<RatingPublic>;
+    count: number;
 };
 
 export type Token = {
@@ -139,6 +185,38 @@ export type CasesDeleteCaseData = {
 
 export type CasesDeleteCaseResponse = (Message);
 
+export type DocumentsReadDocumentsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type DocumentsReadDocumentsResponse = (DocumentsPublic);
+
+export type DocumentsCreateDocumentData = {
+    requestBody: DocumentCreate;
+};
+
+export type DocumentsCreateDocumentResponse = (DocumentPublic);
+
+export type DocumentsReadDocumentData = {
+    id: string;
+};
+
+export type DocumentsReadDocumentResponse = (DocumentPublic);
+
+export type DocumentsUpdateDocumentData = {
+    id: string;
+    requestBody: DocumentCreate;
+};
+
+export type DocumentsUpdateDocumentResponse = (DocumentPublic);
+
+export type DocumentsDeleteDocumentData = {
+    id: string;
+};
+
+export type DocumentsDeleteDocumentResponse = (Message);
+
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
 };
@@ -170,6 +248,77 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type QueriesReadQueriesData = {
+    caseId?: (string | null);
+    limit?: number;
+    skip?: number;
+};
+
+export type QueriesReadQueriesResponse = (QueriesPublic);
+
+export type QueriesCreateQueryData = {
+    caseId: string;
+    requestBody: QueryCreate;
+};
+
+export type QueriesCreateQueryResponse = (QueryPublic);
+
+export type QueriesReadQueryData = {
+    id: string;
+};
+
+export type QueriesReadQueryResponse = (QueryPublic);
+
+export type QueriesUpdateQueryData = {
+    id: string;
+    requestBody: QueryCreate;
+};
+
+export type QueriesUpdateQueryResponse = (QueryPublic);
+
+export type QueriesDeleteQueryData = {
+    id: string;
+};
+
+export type QueriesDeleteQueryResponse = (Message);
+
+export type RatingsReadRatingsData = {
+    documentId?: (string | null);
+    limit?: number;
+    queryId?: (string | null);
+    skip?: number;
+};
+
+export type RatingsReadRatingsResponse = (RatingsPublic);
+
+export type RatingsCreateRatingData = {
+    requestBody: RatingCreate;
+};
+
+export type RatingsCreateRatingResponse = (RatingPublic);
+
+export type RatingsReadRatingData = {
+    documentId: string;
+    queryId: string;
+};
+
+export type RatingsReadRatingResponse = (RatingPublic);
+
+export type RatingsUpdateRatingData = {
+    documentId: string;
+    queryId: string;
+    requestBody: RatingCreate;
+};
+
+export type RatingsUpdateRatingResponse = (RatingPublic);
+
+export type RatingsDeleteRatingData = {
+    documentId: string;
+    queryId: string;
+};
+
+export type RatingsDeleteRatingResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;
