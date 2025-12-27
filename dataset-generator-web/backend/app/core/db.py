@@ -95,6 +95,7 @@ def init_db(session: Session) -> None:
 
     # Create ratings for each query-document pair if they don't exist
     for query in queries:
+        current_position = 0
         for document in documents:
             existing_rating = session.exec(
                 select(Rating).where(
@@ -107,6 +108,7 @@ def init_db(session: Session) -> None:
                 rating = Rating(
                     query_id=query.query_id,
                     document_id=document.document_id,
+                    position=(current_position := current_position + 1),
                     user_rating=random.randint(0, case.max_rating_value) if random.randint(0,1) == 0 else None,
                     llm_rating=(hash(str(query.query_id) + str(document.document_id)) % 5) + 1,  # Random rating 1-5
                     explanation=f"Auto-generated rating from query {query.query_id} and document {document.document_id}" if random.randint(0,1) == 0 else None

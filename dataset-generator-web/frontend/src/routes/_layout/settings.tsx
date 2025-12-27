@@ -35,16 +35,13 @@ function UserSettings() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="shrink-0 border-b px-6 py-4 bg-background">
+      <header className="shrink-0 border-b px-6 py-2 bg-background">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">User Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
-          </p>
         </div>
       </header>
 
-      <div className="page-content flex-1 overflow-y-auto px-6 py-4">
+      <div className="page-content flex-1 overflow-y-auto px-6 py-2">
         <Tabs defaultValue="my-profile">
           <TabsList>
             {finalTabs.map((tab) => (

@@ -33,9 +33,9 @@ import {CasePublic} from "@/client";
 
 export const columns: ColumnDef<CasePublic>[] = [
   {
-    accessorKey: "id",
+    accessorKey: "case_id",
     header: "ID",
-    cell: ({ row }) => <span className="font-medium">{row.original.id}</span>,
+    cell: ({ row }) => <span className="font-medium">{row.original.case_id}</span>,
   },
   {
     accessorKey: "title",
@@ -65,7 +65,10 @@ export const columns: ColumnDef<CasePublic>[] = [
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => (
-      <div className="flex justify-end">
+      <div
+        className="flex justify-end"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CaseActionsMenu case_obj={row.original} />
       </div>
     ),

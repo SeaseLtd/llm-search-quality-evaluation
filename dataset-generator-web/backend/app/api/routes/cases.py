@@ -62,13 +62,10 @@ def read_case(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> 
     if not current_user.is_superuser and (case.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
-    app.logger.info(f"Case ID: {case.case_id}, Title: {case.title}, Max rating: {case.max_rating_value}, Queries count: {len(case.queries)}")
     # for query in case.queries:
-    #     app.logger.info(f"Query: {query.query_id}, Ratings: {len(query.ratings)}")
-    #     for rating in query.ratings:
-    #         app.logger.info(f"  Document ID: {rating.document_id}")
-    #         for field, value in rating.document.model_dump().items():
-    #             app.logger.info(f"    {field}: {value}")
+    #     app.logger.info(f"Query ID: {query.query_id}, Ratings count: {len(query.ratings)}")
+    #     for rating in sorted(query.ratings, key=lambda r: r.position):
+    #         app.logger.info(f"Rating {rating.position} - Query ID: {rating.query_id}, Document ID: {rating.document_id}, LLM Rating: {rating.llm_rating}, Document: {rating.document.fields['title']}")
 
     return CaseDetailed(case)
 

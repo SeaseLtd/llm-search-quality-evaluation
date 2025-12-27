@@ -65,16 +65,15 @@ function CasesTable() {
 function Cases() {
   return (
     <div className="flex flex-col h-full">
-      <header className="shrink-0 border-b px-6 py-4 bg-background">
+      <header className="shrink-0 border-b px-6 py-2 bg-background">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Cases</h1>
-            <p className="text-muted-foreground">Create and manage your cases</p>
           </div>
           <CreateCase />
         </div>
       </header>
-      <div className="page-content flex-1 overflow-y-auto px-6 py-4">
+      <div className="page-content flex-1 overflow-y-auto px-6 py-2">
         <CasesTable />
       </div>
     </div>

@@ -129,6 +129,12 @@ export type UserPublic = {
     user_id: string;
 };
 
+export type UserRatingUpdate = {
+    query_id: string;
+    document_id: string;
+    user_rating: number;
+};
+
 export type UserRegister = {
     email: string;
     password: string;
@@ -312,13 +318,13 @@ export type RatingsReadRatingData = {
 
 export type RatingsReadRatingResponse = (RatingDetailed);
 
-export type RatingsUpdateRatingData = {
+export type RatingsUpdateUserRatingData = {
     documentId: string;
     queryId: string;
-    requestBody: RatingCreate;
+    requestBody: UserRatingUpdate;
 };
 
-export type RatingsUpdateRatingResponse = (RatingDetailed);
+export type RatingsUpdateUserRatingResponse = (RatingDetailed);
 
 export type RatingsDeleteRatingData = {
     documentId: string;

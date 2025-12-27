@@ -20,8 +20,9 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
   const [open, setOpen] = useState(false)
   const { user: currentUser } = useAuth()
 
-  if (user.id === currentUser?.id) {
-    return null
+  // Don't show actions menu for current user, but render empty space to keep column
+  if (user.user_id === currentUser?.user_id) {
+    return <div className="w-10" />
   }
 
   return (
@@ -33,7 +34,7 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditUser user={user} onSuccess={() => setOpen(false)} />
-        <DeleteUser id={user.id} onSuccess={() => setOpen(false)} />
+        <DeleteUser id={user.user_id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -403,7 +403,7 @@ export const RatingCreateSchema = {
             anyOf: [
                 {
                     type: 'integer',
-                    exclusiveMinimum: 0
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -415,7 +415,7 @@ export const RatingCreateSchema = {
             anyOf: [
                 {
                     type: 'integer',
-                    exclusiveMinimum: 0
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -457,7 +457,7 @@ export const RatingDetailedSchema = {
             anyOf: [
                 {
                     type: 'integer',
-                    exclusiveMinimum: 0
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -469,7 +469,7 @@ export const RatingDetailedSchema = {
             anyOf: [
                 {
                     type: 'integer',
-                    exclusiveMinimum: 0
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -616,6 +616,30 @@ export const UserPublicSchema = {
     type: 'object',
     required: ['email', 'user_id'],
     title: 'UserPublic'
+} as const;
+
+export const UserRatingUpdateSchema = {
+    properties: {
+        query_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Query Id'
+        },
+        document_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Document Id'
+        },
+        user_rating: {
+            type: 'integer',
+            minimum: 0,
+            title: 'User Rating',
+            nullable: false
+        }
+    },
+    type: 'object',
+    required: ['query_id', 'document_id', 'user_rating'],
+    title: 'UserRatingUpdate'
 } as const;
 
 export const UserRegisterSchema = {
