@@ -33,7 +33,7 @@ function UsersTableContent() {
 
   const tableData: UserTableData[] = users.data.map((user: UserPublic) => ({
     ...user,
-    isCurrentUser: currentUser?.id === user.id,
+    isCurrentUser: currentUser?.user_id === user.user_id,
   }))
 
   return <DataTable columns={columns} data={tableData} />
@@ -49,19 +49,21 @@ function UsersTable() {
 
 function Admin() {
   return (
-    <div className="flex flex-col gap-6">
-      <header className="sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b px-4">
+    <div className="flex flex-col h-full">
+      <header className="shrink-0 border-b px-6 py-4 bg-background">
         <div className="flex items-center justify-between">
           <div>
-              <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-              <p className="text-muted-foreground">
-                  Manage user accounts and permissions
-              </p>
+            <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+            <p className="text-muted-foreground">
+              Manage user accounts and permissions
+            </p>
           </div>
-        <AddUser />
+          <AddUser />
         </div>
       </header>
-      <UsersTable />
+      <div className="page-content flex-1 overflow-y-auto px-6 py-4">
+        <UsersTable />
+      </div>
     </div>
   )
 }

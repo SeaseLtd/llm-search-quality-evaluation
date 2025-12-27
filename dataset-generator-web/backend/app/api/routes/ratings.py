@@ -5,16 +5,17 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models.rating import Rating, RatingPublic, RatingCreate
+from app.api.models.rating import RatingDetailed, RatingCreate
+from app.models.rating import Rating
 from app.models.query import Query
 from app.models.document import Document
 from app.models.case import Case
-from app.models.message import Message
+from app.api.models.message import Message
 
 router = APIRouter(prefix="/ratings", tags=["ratings"])
 
 
-@router.get("/", response_model=list[RatingPublic])
+@router.get("/", response_model=list[RatingDetailed])
 def read_ratings(
     session: SessionDep,
     current_user: CurrentUser,
@@ -22,7 +23,7 @@ def read_ratings(
     document_id: uuid.UUID | None = None,
     skip: int = 0,
     limit: int = 100
-) -> list[RatingPublic]:
+) -> list[RatingDetailed]:
     """
     Retrieve ratings. Optionally filter by query_id or document_id.
     """
@@ -35,7 +36,7 @@ def read_ratings(
 
         # Check permissions via the case
         case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.id):
+        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
         statement = statement.where(Rating.query_id == query_id)
@@ -53,19 +54,19 @@ def read_ratings(
             statement
             .join(Query)
             .join(Case)
-            .where(Case.owner_id == current_user.id)
+            .where(Case.owner_id == current_user.user_id)
         )
     ratings = session.exec(statement.offset(skip).limit(limit)).all()
     return ratings
 
 
-@router.get("/{query_id}/{document_id}", response_model=RatingPublic)
+@router.get("/{query_id}/{document_id}", response_model=RatingDetailed)
 def read_rating(
     session: SessionDep,
     current_user: CurrentUser,
     query_id: uuid.UUID,
     document_id: uuid.UUID
-) -> Any:
+) -> RatingDetailed:
     """
     Get rating by query_id and document_id.
     """
@@ -83,13 +84,13 @@ def read_rating(
     query = session.get(Query, query_id)
     if query:
         case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.id):
+        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
     return rating
 
 
-@router.post("/", response_model=RatingPublic)
+@router.post("/", response_model=RatingDetailed)
 def create_rating(
     *, session: SessionDep, current_user: CurrentUser, rating_in: RatingCreate
 ) -> Any:
@@ -102,7 +103,7 @@ def create_rating(
         raise HTTPException(status_code=404, detail="Query not found")
 
     case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # Verify document exists
@@ -128,7 +129,7 @@ def create_rating(
     return rating
 
 
-@router.put("/{query_id}/{document_id}", response_model=RatingPublic)
+@router.put("/{query_id}/{document_id}", response_model=RatingDetailed)
 def update_rating(
     *,
     session: SessionDep,
@@ -154,7 +155,7 @@ def update_rating(
     query = session.get(Query, query_id)
     if query:
         case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.id):
+        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
     update_dict = rating_in.model_dump(exclude_unset=True, exclude={"query_id", "document_id"})
@@ -189,7 +190,7 @@ def delete_rating(
     query = session.get(Query, query_id)
     if query:
         case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.id):
+        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
     session.delete(rating)

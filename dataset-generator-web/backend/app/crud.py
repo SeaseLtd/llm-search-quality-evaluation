@@ -3,9 +3,10 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+import app
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User, UserCreate, UserUpdate
-from app.models.case import Case, CaseCreate
+from app.models.case import Case
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -47,8 +48,11 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     return db_user
 
 
-def create_case(*, session: Session, case_in: CaseCreate, owner_id: uuid.UUID) -> Case:
-    db_case = Case.model_validate(case_in, update={"owner_id": owner_id})
+def create_case(*, session: Session, case_in: Case, owner_id: uuid.UUID) -> Case:
+    app.logger.info(f"Create case - case_in: {case_in}")
+    app.logger.info(f"Create case - owner_id: {owner_id}")
+    db_case: Case = Case.model_validate(case_in, update={"owner_id": owner_id})
+    app.logger.info(f"Create case - db_case: {db_case}")
     session.add(db_case)
     session.commit()
     session.refresh(db_case)

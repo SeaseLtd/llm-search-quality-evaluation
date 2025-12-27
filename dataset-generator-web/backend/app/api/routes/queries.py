@@ -3,11 +3,15 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
+from sqlalchemy.orm import selectinload
 
+import app
 from app.api.deps import CurrentUser, SessionDep
-from app.models.query import Query, QueryPublic, QueryCreate
+from app.api.models.query import QueryPublic, QueryCreate
+from app.models import Rating
+from app.models.query import Query
 from app.models.case import Case
-from app.models.message import Message
+from app.api.models.message import Message
 
 router = APIRouter(prefix="/queries", tags=["queries"])
 
@@ -17,7 +21,7 @@ def read_queries(
     session: SessionDep,
     current_user: CurrentUser,
     case_id: uuid.UUID | None = None,
-    skip: int = 0,
+    add_documents: bool = False,
     limit: int = 100
 ) -> list[QueryPublic]:
     """
@@ -27,7 +31,6 @@ def read_queries(
     statement = (
         select(Query)
         .join(Case)
-        .offset(skip)
         .limit(limit)
     )
 
@@ -36,14 +39,31 @@ def read_queries(
         case = session.get(Case, case_id)
         if not case:
             raise HTTPException(status_code=404, detail="Case not found")
-        if not current_user.is_superuser and (case.owner_id != current_user.id):
+        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
         statement = statement.where(Query.case_id == case_id)
     if not current_user.is_superuser:
-        statement = statement.where(Case.owner_id == current_user.id)
-    queries = session.exec(statement).all()
-    return queries
+        statement = statement.where(Case.owner_id == current_user.user_id)
+
+    if add_documents:
+        statement.options(
+            selectinload(Query.ratings)
+            .selectinload(Rating.document)
+        )
+
+    queries: list[Query] = session.exec(statement).all()
+
+    for query in queries:
+        app.logger.info(f"Query ID: {query.query_id}, Ratings count: {len(query.ratings)}")
+        if add_documents:
+            for rating in query.ratings:
+                app.logger.info(f" - {rating.llm_rating} {rating.document}")
+
+    return [
+        QueryPublic(query)
+        for query in queries
+    ]
 
 
 @router.get("/{id}", response_model=QueryPublic)
@@ -57,7 +77,7 @@ def read_query(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) ->
 
     # Check permissions via the case
     case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     return query
@@ -74,7 +94,7 @@ def create_query(
     case = session.get(Case, case_id)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     query = Query.model_validate(query_in, update={"case_id": case_id})
@@ -101,7 +121,7 @@ def update_query(
 
     # Check permissions via the case
     case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     update_dict = query_in.model_dump(exclude_unset=True)
@@ -125,7 +145,7 @@ def delete_query(
 
     # Check permissions via the case
     case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     session.delete(query)

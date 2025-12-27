@@ -1,16 +1,18 @@
 import uuid
 from typing import Any
 
+import app
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.models.case import CasePublic, CaseCreate, CaseUpdate, CaseDetailed
 
-from app.models.case import Case, CasePublic, CaseUpdate, CaseCreate, CaseDetailed
-from app.models.query import Query, QueryPublic
+from app.models.case import Case
+from app.models.query import Query
 from app.models.rating import Rating
-from app.models.document import Document, DocumentWithRating
-from app.models.message import Message
+from app.api.models.message import Message
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -22,45 +24,53 @@ def read_cases(
     """
     Retrieve cases.
     """
-
     statement = (
-        select(Case)
-        .where(Case.owner_id == current_user.id)
-        .offset(skip)
-        .limit(limit)
+        select(Case).
+        offset(skip).
+        limit(limit)
     )
+
+    # Filter by owner_id only if not superuser
     if not current_user.is_superuser:
-        statement = statement.where(Case.owner_id == current_user.id)
+        statement = statement.where(Case.owner_id == current_user.user_id)
+
     cases = session.exec(statement).all()
 
+    # Return empty list if no cases found (not 404)
     return cases
 
 
 @router.get("/{id}", response_model=CaseDetailed)
-def read_case(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_case(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> CaseDetailed:
     """
     Get case by ID with all queries, documents and ratings.
     """
-    # Get all queries for this case
-    queries_statement = (select(Case)
-                         .join(Query)
-                         .join(Rating)
-                         .join(Document)
-                         .where(Query.case_id == id))
-    case: Case = session.exec(queries_statement).one()
+    # Get the case with all its queries
+    statement = (
+        select(Case)
+        .options(
+            selectinload(Case.queries)
+            .selectinload(Query.ratings)
+            .selectinload(Rating.document)
+        )
+        .where(Case.case_id == id)
+    )
+    case: Case = session.exec(statement).one_or_none()
 
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
     if not current_user.is_superuser and (case.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
-    return CaseDetailed(
-        id=case.id,
-        title=case.title,
-        description=case.description,
-        owner_id=case.owner_id,
-        queries=case.queries
-    )
+    app.logger.info(f"Case ID: {case.case_id}, Title: {case.title}, Max rating: {case.max_rating_value}, Queries count: {len(case.queries)}")
+    # for query in case.queries:
+    #     app.logger.info(f"Query: {query.query_id}, Ratings: {len(query.ratings)}")
+    #     for rating in query.ratings:
+    #         app.logger.info(f"  Document ID: {rating.document_id}")
+    #         for field, value in rating.document.model_dump().items():
+    #             app.logger.info(f"    {field}: {value}")
+
+    return CaseDetailed(case)
 
 
 @router.post("/", response_model=CasePublic)

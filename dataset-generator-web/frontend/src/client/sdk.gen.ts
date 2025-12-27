@@ -12,7 +12,7 @@ export class CasesService {
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
-     * @returns CasesPublic Successful Response
+     * @returns CasePublic Successful Response
      * @throws ApiError
      */
     public static readCases(data: CasesReadCasesData = {}): CancelablePromise<CasesReadCasesResponse> {
@@ -51,10 +51,10 @@ export class CasesService {
     
     /**
      * Read Case
-     * Get case by ID.
+     * Get case by ID with all queries, documents and ratings.
      * @param data The data for the request.
      * @param data.id
-     * @returns CasePublic Successful Response
+     * @returns CaseDetailed Successful Response
      * @throws ApiError
      */
     public static readCase(data: CasesReadCaseData): CancelablePromise<CasesReadCaseResponse> {
@@ -123,7 +123,7 @@ export class DocumentsService {
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
-     * @returns DocumentsPublic Successful Response
+     * @returns DocumentPublic Successful Response
      * @throws ApiError
      */
     public static readDocuments(data: DocumentsReadDocumentsData = {}): CancelablePromise<DocumentsReadDocumentsResponse> {
@@ -352,9 +352,9 @@ export class QueriesService {
      * Retrieve queries. Optionally filter by case_id.
      * @param data The data for the request.
      * @param data.caseId
-     * @param data.skip
+     * @param data.addDocuments
      * @param data.limit
-     * @returns QueriesPublic Successful Response
+     * @returns QueryPublic Successful Response
      * @throws ApiError
      */
     public static readQueries(data: QueriesReadQueriesData = {}): CancelablePromise<QueriesReadQueriesResponse> {
@@ -363,7 +363,7 @@ export class QueriesService {
             url: '/api/v1/queries/',
             query: {
                 case_id: data.caseId,
-                skip: data.skip,
+                add_documents: data.addDocuments,
                 limit: data.limit
             },
             errors: {
@@ -472,7 +472,7 @@ export class RatingsService {
      * @param data.documentId
      * @param data.skip
      * @param data.limit
-     * @returns RatingsPublic Successful Response
+     * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
     public static readRatings(data: RatingsReadRatingsData = {}): CancelablePromise<RatingsReadRatingsResponse> {
@@ -496,7 +496,7 @@ export class RatingsService {
      * Create new rating.
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns RatingPublic Successful Response
+     * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
     public static createRating(data: RatingsCreateRatingData): CancelablePromise<RatingsCreateRatingResponse> {
@@ -517,7 +517,7 @@ export class RatingsService {
      * @param data The data for the request.
      * @param data.queryId
      * @param data.documentId
-     * @returns RatingPublic Successful Response
+     * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
     public static readRating(data: RatingsReadRatingData): CancelablePromise<RatingsReadRatingResponse> {
@@ -541,7 +541,7 @@ export class RatingsService {
      * @param data.queryId
      * @param data.documentId
      * @param data.requestBody
-     * @returns RatingPublic Successful Response
+     * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
     public static updateRating(data: RatingsUpdateRatingData): CancelablePromise<RatingsUpdateRatingResponse> {

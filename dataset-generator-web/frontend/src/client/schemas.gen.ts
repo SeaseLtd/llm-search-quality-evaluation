@@ -74,11 +74,78 @@ export const CaseCreateSchema = {
                 }
             ],
             title: 'Description'
+        },
+        max_rating_value: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Max Rating Value',
+            default: 3
+        },
+        document_title_field_name: {
+            type: 'string',
+            maxLength: 32,
+            title: 'Document Title Field Name',
+            default: 'title'
         }
     },
     type: 'object',
     required: ['title'],
     title: 'CaseCreate'
+} as const;
+
+export const CaseDetailedSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        max_rating_value: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Max Rating Value',
+            default: 3
+        },
+        document_title_field_name: {
+            type: 'string',
+            maxLength: 32,
+            title: 'Document Title Field Name',
+            default: 'title'
+        },
+        case_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Case Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        queries: {
+            items: {
+                '$ref': '#/components/schemas/QueryPublic'
+            },
+            type: 'array',
+            title: 'Queries'
+        }
+    },
+    type: 'object',
+    required: ['title', 'case_id', 'owner_id', 'queries'],
+    title: 'CaseDetailed'
 } as const;
 
 export const CasePublicSchema = {
@@ -101,10 +168,22 @@ export const CasePublicSchema = {
             ],
             title: 'Description'
         },
-        id: {
+        max_rating_value: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Max Rating Value',
+            default: 3
+        },
+        document_title_field_name: {
+            type: 'string',
+            maxLength: 32,
+            title: 'Document Title Field Name',
+            default: 'title'
+        },
+        case_id: {
             type: 'string',
             format: 'uuid',
-            title: 'Id'
+            title: 'Case Id'
         },
         owner_id: {
             type: 'string',
@@ -113,7 +192,7 @@ export const CasePublicSchema = {
         }
     },
     type: 'object',
-    required: ['title', 'id', 'owner_id'],
+    required: ['title', 'case_id', 'owner_id'],
     title: 'CasePublic'
 } as const;
 
@@ -143,79 +222,58 @@ export const CaseUpdateSchema = {
                 }
             ],
             title: 'Description'
+        },
+        max_rating_value: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Max Rating Value',
+            default: 3
+        },
+        document_title_field_name: {
+            type: 'string',
+            maxLength: 32,
+            title: 'Document Title Field Name',
+            default: 'title'
         }
     },
     type: 'object',
     title: 'CaseUpdate'
 } as const;
 
-export const CasesPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/CasePublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'CasesPublic'
-} as const;
-
 export const DocumentCreateSchema = {
     properties: {
         fields: {
-            type: 'string',
-            minLength: 1,
-            title: 'Fields'
+            additionalProperties: {
+                type: 'string'
+            },
+            type: 'object',
+            title: 'Fields',
+            default: {}
         }
     },
     type: 'object',
-    required: ['fields'],
     title: 'DocumentCreate'
 } as const;
 
 export const DocumentPublicSchema = {
     properties: {
         fields: {
-            type: 'string',
-            minLength: 1,
-            title: 'Fields'
+            additionalProperties: {
+                type: 'string'
+            },
+            type: 'object',
+            title: 'Fields',
+            default: {}
         },
-        id: {
+        document_id: {
             type: 'string',
             format: 'uuid',
-            title: 'Id'
+            title: 'Document Id'
         }
     },
     type: 'object',
-    required: ['fields', 'id'],
+    required: ['document_id'],
     title: 'DocumentPublic'
-} as const;
-
-export const DocumentsPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/DocumentPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'DocumentsPublic'
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -287,25 +345,6 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
-export const QueriesPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/QueryPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'QueriesPublic'
-} as const;
-
 export const QueryCreateSchema = {
     properties: {
         query: {
@@ -328,28 +367,73 @@ export const QueryPublicSchema = {
             minLength: 1,
             title: 'Query'
         },
-        id: {
+        query_id: {
             type: 'string',
             format: 'uuid',
-            title: 'Id'
+            title: 'Query Id'
         },
         case_id: {
             type: 'string',
             format: 'uuid',
             title: 'Case Id'
+        },
+        ratings: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/RatingDetailed'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ratings'
         }
     },
     type: 'object',
-    required: ['query', 'id', 'case_id'],
+    required: ['query', 'query_id', 'case_id', 'ratings'],
     title: 'QueryPublic'
 } as const;
 
 export const RatingCreateSchema = {
     properties: {
         llm_rating: {
-            type: 'integer',
-            exclusiveMinimum: 0,
+            anyOf: [
+                {
+                    type: 'integer',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Llm Rating'
+        },
+        user_rating: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Rating'
+        },
+        explanation: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Explanation'
         },
         query_id: {
             type: 'string',
@@ -363,50 +447,55 @@ export const RatingCreateSchema = {
         }
     },
     type: 'object',
-    required: ['llm_rating', 'query_id', 'document_id'],
+    required: ['llm_rating', 'user_rating', 'query_id', 'document_id'],
     title: 'RatingCreate'
 } as const;
 
-export const RatingPublicSchema = {
+export const RatingDetailedSchema = {
     properties: {
         llm_rating: {
-            type: 'integer',
-            exclusiveMinimum: 0,
+            anyOf: [
+                {
+                    type: 'integer',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Llm Rating'
         },
-        query_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Query Id'
+        user_rating: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Rating'
         },
-        document_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Document Id'
+        explanation: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Explanation'
+        },
+        document: {
+            '$ref': '#/components/schemas/DocumentPublic'
         }
     },
     type: 'object',
-    required: ['llm_rating', 'query_id', 'document_id'],
-    title: 'RatingPublic'
-} as const;
-
-export const RatingsPublicSchema = {
-    properties: {
-        data: {
-            items: {
-                '$ref': '#/components/schemas/RatingPublic'
-            },
-            type: 'array',
-            title: 'Data'
-        },
-        count: {
-            type: 'integer',
-            title: 'Count'
-        }
-    },
-    type: 'object',
-    required: ['data', 'count'],
-    title: 'RatingsPublic'
+    required: ['llm_rating', 'user_rating', 'document'],
+    title: 'RatingDetailed'
 } as const;
 
 export const TokenSchema = {
@@ -465,16 +554,16 @@ export const UserCreateSchema = {
             default: false
         },
         full_name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Full Name'
+            type: 'string',
+            maxLength: 255,
+            title: 'Full Name',
+            default: ''
+        },
+        upload_limit_mb: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Upload Limit Mb',
+            default: 100
         },
         password: {
             type: 'string',
@@ -507,25 +596,25 @@ export const UserPublicSchema = {
             default: false
         },
         full_name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Full Name'
+            type: 'string',
+            maxLength: 255,
+            title: 'Full Name',
+            default: ''
         },
-        id: {
+        upload_limit_mb: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Upload Limit Mb',
+            default: 100
+        },
+        user_id: {
             type: 'string',
             format: 'uuid',
-            title: 'Id'
+            title: 'User Id'
         }
     },
     type: 'object',
-    required: ['email', 'id'],
+    required: ['email', 'user_id'],
     title: 'UserPublic'
 } as const;
 
@@ -587,16 +676,16 @@ export const UserUpdateSchema = {
             default: false
         },
         full_name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Full Name'
+            type: 'string',
+            maxLength: 255,
+            title: 'Full Name',
+            default: ''
+        },
+        upload_limit_mb: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Upload Limit Mb',
+            default: 100
         },
         password: {
             anyOf: [

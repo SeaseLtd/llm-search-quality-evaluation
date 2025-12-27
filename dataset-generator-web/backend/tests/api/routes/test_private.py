@@ -19,7 +19,7 @@ def test_create_user(client: TestClient, db: Session) -> None:
 
     data = r.json()
 
-    user = db.exec(select(User).where(User.id == data["id"])).first()
+    user = db.exec(select(User).where(User.user_id == data["id"])).first()
 
     assert user
     assert user.email == "pollo@listo.com"

@@ -29,14 +29,14 @@ def test_read_case(
 ) -> None:
     case = create_random_case(db)
     response = client.get(
-        f"{settings.API_V1_STR}/cases/{case.id}",
+        f"{settings.API_V1_STR}/cases/{case.case_id}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
     content = response.json()
     assert content["title"] == case.title
     assert content["description"] == case.description
-    assert content["id"] == str(case.id)
+    assert content["id"] == str(case.case_id)
     assert content["owner_id"] == str(case.owner_id)
 
 
@@ -57,7 +57,7 @@ def test_read_case_not_enough_permissions(
 ) -> None:
     case = create_random_case(db)
     response = client.get(
-        f"{settings.API_V1_STR}/cases/{case.id}",
+        f"{settings.API_V1_STR}/cases/{case.case_id}",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 400
@@ -85,7 +85,7 @@ def test_update_case(
     case = create_random_case(db)
     data = {"title": "Updated title", "description": "Updated description"}
     response = client.put(
-        f"{settings.API_V1_STR}/cases/{case.id}",
+        f"{settings.API_V1_STR}/cases/{case.case_id}",
         headers=superuser_token_headers,
         json=data,
     )
@@ -93,7 +93,7 @@ def test_update_case(
     content = response.json()
     assert content["title"] == data["title"]
     assert content["description"] == data["description"]
-    assert content["id"] == str(case.id)
+    assert content["id"] == str(case.case_id)
     assert content["owner_id"] == str(case.owner_id)
 
 
@@ -117,7 +117,7 @@ def test_update_case_not_enough_permissions(
     case = create_random_case(db)
     data = {"title": "Updated title", "description": "Updated description"}
     response = client.put(
-        f"{settings.API_V1_STR}/cases/{case.id}",
+        f"{settings.API_V1_STR}/cases/{case.case_id}",
         headers=normal_user_token_headers,
         json=data,
     )
@@ -131,7 +131,7 @@ def test_delete_case(
 ) -> None:
     case = create_random_case(db)
     response = client.delete(
-        f"{settings.API_V1_STR}/cases/{case.id}",
+        f"{settings.API_V1_STR}/cases/{case.case_id}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
@@ -156,7 +156,7 @@ def test_delete_case_not_enough_permissions(
 ) -> None:
     case = create_random_case(db)
     response = client.delete(
-        f"{settings.API_V1_STR}/cases/{case.id}",
+        f"{settings.API_V1_STR}/cases/{case.case_id}",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 400

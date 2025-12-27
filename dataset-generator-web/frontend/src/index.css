@@ -121,4 +121,8 @@
   [role="button"] {
     cursor: pointer;
   }
+  .page-content {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
 }
