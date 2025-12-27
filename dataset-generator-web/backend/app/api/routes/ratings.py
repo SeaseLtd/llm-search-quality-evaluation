@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.api.models.rating import RatingDetailed, RatingCreate
+from app.api.models.rating import RatingDetailed, RatingCreate, UserRatingUpdate
 from app.models.rating import Rating
 from app.models.query import Query
 from app.models.document import Document
@@ -130,13 +130,13 @@ def create_rating(
 
 
 @router.put("/{query_id}/{document_id}", response_model=RatingDetailed)
-def update_rating(
+def update_user_rating(
     *,
     session: SessionDep,
     current_user: CurrentUser,
     query_id: uuid.UUID,
     document_id: uuid.UUID,
-    rating_in: RatingCreate,
+    rating_in: UserRatingUpdate,
 ) -> Any:
     """
     Update a rating.
@@ -146,7 +146,7 @@ def update_rating(
             Rating.query_id == query_id,
             Rating.document_id == document_id
         )
-    ).first()
+    ).one_or_none()
 
     if not rating:
         raise HTTPException(status_code=404, detail="Rating not found")

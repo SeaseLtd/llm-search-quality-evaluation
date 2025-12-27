@@ -27,7 +27,7 @@ export const CaseActionsMenu = ({ case_obj }: ItemActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditCase case_obj={case_obj} onSuccess={() => setOpen(false)} />
-        <DeleteCase id={case_obj.id} onSuccess={() => setOpen(false)} />
+        <DeleteCase id={case_obj.case_id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

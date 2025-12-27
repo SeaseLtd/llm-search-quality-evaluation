@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { RatingDetailed } from "@/client";
 import DocumentCard from "./DocumentCard";
+import RatingSelect from "./RatingSelect";
 
 interface QueryCardProps {
   query: {
@@ -13,7 +14,21 @@ interface QueryCardProps {
   maxRating: number;
   onToggle: () => void;
   onRatingChange: (docId: string, newRating: number) => void;
+  updatingRatings: Set<string>;
+  getRatingKey: (docId: string) => string;
 }
+
+// Calculate average rating for a query
+const calculateAverageRating = (ratings: Array<RatingDetailed> | null): number => {
+  if (!ratings || ratings.length === 0) return 0;
+
+  const sum = ratings.reduce((acc, rating) => {
+    const ratingValue = rating.user_rating ?? rating.llm_rating ?? 0;
+    return acc + ratingValue;
+  }, 0);
+
+  return sum / ratings.length;
+};
 
 export default function QueryCard({
   query,
@@ -21,14 +36,24 @@ export default function QueryCard({
   maxRating,
   onToggle,
   onRatingChange,
+  updatingRatings,
+  getRatingKey,
 }: QueryCardProps) {
+  const averageRating = calculateAverageRating(query.ratings);
+
   return (
     <div className="border rounded-lg overflow-hidden">
       {/* Query Header */}
       <div
-        className="flex items-center p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
         onClick={onToggle}
       >
+        {/* Average Rating Badge */}
+        <RatingSelect
+          readonly
+          value={averageRating}
+          maxRating={maxRating}
+        />
         <div className="flex-1 font-medium">{query.query}</div>
         {query.expanded ? (
           <ChevronUp size={20} className="text-primary" />
@@ -49,6 +74,7 @@ export default function QueryCard({
                   titleField={titleField}
                   maxRating={maxRating}
                   onRatingChange={(newRating) => onRatingChange(rating.document.document_id, newRating)}
+                  isLoading={updatingRatings.has(getRatingKey(rating.document.document_id))}
                 />
               ))}
             </>

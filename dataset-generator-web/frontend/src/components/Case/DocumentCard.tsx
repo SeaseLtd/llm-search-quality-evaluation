@@ -1,12 +1,14 @@
 import { RatingDetailed } from "@/client";
 import RatingSelect from "./RatingSelect";
 import RatingExplanationTooltip from "./RatingExplanationTooltip";
+import { Loader2 } from "lucide-react";
 
 interface DocumentCardProps {
   rating: RatingDetailed;
   titleField: string;
   maxRating: number;
   onRatingChange: (newRating: number) => void;
+  isLoading?: boolean;
 }
 
 export default function DocumentCard({
@@ -14,16 +16,22 @@ export default function DocumentCard({
   titleField,
   maxRating,
   onRatingChange,
+  isLoading = false,
 }: DocumentCardProps) {
   return (
     <div className="p-4 border-b last:border-b-0 bg-background m-2 rounded-md shadow-sm">
       <div className="flex gap-4">
         {/* Rating Select - Left Column */}
-        <RatingSelect
-          rating={rating}
-          maxRating={maxRating}
-          onChange={onRatingChange}
-        />
+        <div className="flex flex-col items-center gap-1">
+          <RatingSelect
+            rating={rating}
+            maxRating={maxRating}
+            onChange={onRatingChange}
+          />
+          {isLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
 
         {/* Document Info - Center Column */}
         <div className="flex-1">

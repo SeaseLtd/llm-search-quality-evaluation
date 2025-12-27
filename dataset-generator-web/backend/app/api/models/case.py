@@ -32,6 +32,6 @@ class CaseDetailed(CasePublic):
             max_rating_value=case.max_rating_value,
             description=case.description,
             owner_id=case.owner_id,
-            queries=[QueryPublic.from_orm(query) for query in case.queries],
+            queries=[QueryPublic(query) for query in case.queries],
         )
 

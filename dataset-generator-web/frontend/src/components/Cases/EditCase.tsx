@@ -59,7 +59,7 @@ const EditCase = ({ case_obj, onSuccess }: EditCaseProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      CasesService.updateCase({ id: case_obj.id, requestBody: data }),
+      CasesService.updateCase({ id: case_obj.case_id, requestBody: data }),
     onSuccess: () => {
       showSuccessToast("Case updated successfully")
       setIsOpen(false)

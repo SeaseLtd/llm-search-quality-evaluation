@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CasesReadCasesData, CasesReadCasesResponse, CasesCreateCaseData, CasesCreateCaseResponse, CasesReadCaseData, CasesReadCaseResponse, CasesUpdateCaseData, CasesUpdateCaseResponse, CasesDeleteCaseData, CasesDeleteCaseResponse, DocumentsReadDocumentsData, DocumentsReadDocumentsResponse, DocumentsCreateDocumentData, DocumentsCreateDocumentResponse, DocumentsReadDocumentData, DocumentsReadDocumentResponse, DocumentsUpdateDocumentData, DocumentsUpdateDocumentResponse, DocumentsDeleteDocumentData, DocumentsDeleteDocumentResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, QueriesReadQueriesData, QueriesReadQueriesResponse, QueriesCreateQueryData, QueriesCreateQueryResponse, QueriesReadQueryData, QueriesReadQueryResponse, QueriesUpdateQueryData, QueriesUpdateQueryResponse, QueriesDeleteQueryData, QueriesDeleteQueryResponse, RatingsReadRatingsData, RatingsReadRatingsResponse, RatingsCreateRatingData, RatingsCreateRatingResponse, RatingsReadRatingData, RatingsReadRatingResponse, RatingsUpdateRatingData, RatingsUpdateRatingResponse, RatingsDeleteRatingData, RatingsDeleteRatingResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CasesReadCasesData, CasesReadCasesResponse, CasesCreateCaseData, CasesCreateCaseResponse, CasesReadCaseData, CasesReadCaseResponse, CasesUpdateCaseData, CasesUpdateCaseResponse, CasesDeleteCaseData, CasesDeleteCaseResponse, DocumentsReadDocumentsData, DocumentsReadDocumentsResponse, DocumentsCreateDocumentData, DocumentsCreateDocumentResponse, DocumentsReadDocumentData, DocumentsReadDocumentResponse, DocumentsUpdateDocumentData, DocumentsUpdateDocumentResponse, DocumentsDeleteDocumentData, DocumentsDeleteDocumentResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, QueriesReadQueriesData, QueriesReadQueriesResponse, QueriesCreateQueryData, QueriesCreateQueryResponse, QueriesReadQueryData, QueriesReadQueryResponse, QueriesUpdateQueryData, QueriesUpdateQueryResponse, QueriesDeleteQueryData, QueriesDeleteQueryResponse, RatingsReadRatingsData, RatingsReadRatingsResponse, RatingsCreateRatingData, RatingsCreateRatingResponse, RatingsReadRatingData, RatingsReadRatingResponse, RatingsUpdateUserRatingData, RatingsUpdateUserRatingResponse, RatingsDeleteRatingData, RatingsDeleteRatingResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class CasesService {
     /**
@@ -535,7 +535,7 @@ export class RatingsService {
     }
     
     /**
-     * Update Rating
+     * Update User Rating
      * Update a rating.
      * @param data The data for the request.
      * @param data.queryId
@@ -544,7 +544,7 @@ export class RatingsService {
      * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
-    public static updateRating(data: RatingsUpdateRatingData): CancelablePromise<RatingsUpdateRatingResponse> {
+    public static updateUserRating(data: RatingsUpdateUserRatingData): CancelablePromise<RatingsUpdateUserRatingResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/ratings/{query_id}/{document_id}',

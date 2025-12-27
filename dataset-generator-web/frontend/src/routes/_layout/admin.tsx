@@ -50,18 +50,15 @@ function UsersTable() {
 function Admin() {
   return (
     <div className="flex flex-col h-full">
-      <header className="shrink-0 border-b px-6 py-4 bg-background">
+      <header className="shrink-0 border-b px-6 py-2 bg-background">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-            <p className="text-muted-foreground">
-              Manage user accounts and permissions
-            </p>
           </div>
           <AddUser />
         </div>
       </header>
-      <div className="page-content flex-1 overflow-y-auto px-6 py-4">
+      <div className="page-content flex-1 overflow-y-auto px-6 py-2">
         <UsersTable />
       </div>
     </div>
