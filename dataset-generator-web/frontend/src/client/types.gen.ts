@@ -12,37 +12,47 @@ export type Body_login_login_access_token = {
 export type CaseCreate = {
     title: string;
     description?: (string | null);
+    max_rating_value?: number;
+    document_title_field_name?: string;
+};
+
+export type CaseDetailed = {
+    title: string;
+    description?: (string | null);
+    max_rating_value?: number;
+    document_title_field_name?: string;
+    case_id: string;
+    owner_id: string;
+    queries: Array<QueryPublic>;
 };
 
 export type CasePublic = {
     title: string;
     description?: (string | null);
-    id: string;
+    max_rating_value?: number;
+    document_title_field_name?: string;
+    case_id: string;
     owner_id: string;
-};
-
-export type CasesPublic = {
-    data: Array<CasePublic>;
-    count: number;
 };
 
 export type CaseUpdate = {
     title?: (string | null);
     description?: (string | null);
+    max_rating_value?: number;
+    document_title_field_name?: string;
 };
 
 export type DocumentCreate = {
-    fields: string;
+    fields?: {
+        [key: string]: (string);
+    };
 };
 
 export type DocumentPublic = {
-    fields: string;
-    id: string;
-};
-
-export type DocumentsPublic = {
-    data: Array<DocumentPublic>;
-    count: number;
+    fields?: {
+        [key: string]: (string);
+    };
+    document_id: string;
 };
 
 export type HTTPValidationError = {
@@ -65,36 +75,30 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
-export type QueriesPublic = {
-    data: Array<QueryPublic>;
-    count: number;
-};
-
 export type QueryCreate = {
     query: string;
 };
 
 export type QueryPublic = {
     query: string;
-    id: string;
+    query_id: string;
     case_id: string;
+    ratings: (Array<RatingDetailed> | null);
 };
 
 export type RatingCreate = {
-    llm_rating: number;
+    llm_rating: (number | null);
+    user_rating: (number | null);
+    explanation?: (string | null);
     query_id: string;
     document_id: string;
 };
 
-export type RatingPublic = {
-    llm_rating: number;
-    query_id: string;
-    document_id: string;
-};
-
-export type RatingsPublic = {
-    data: Array<RatingPublic>;
-    count: number;
+export type RatingDetailed = {
+    llm_rating: (number | null);
+    user_rating: (number | null);
+    explanation?: (string | null);
+    document: DocumentPublic;
 };
 
 export type Token = {
@@ -111,7 +115,8 @@ export type UserCreate = {
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    full_name?: (string | null);
+    full_name?: string;
+    upload_limit_mb?: number;
     password: string;
 };
 
@@ -119,8 +124,9 @@ export type UserPublic = {
     email: string;
     is_active?: boolean;
     is_superuser?: boolean;
-    full_name?: (string | null);
-    id: string;
+    full_name?: string;
+    upload_limit_mb?: number;
+    user_id: string;
 };
 
 export type UserRegister = {
@@ -138,7 +144,8 @@ export type UserUpdate = {
     email?: (string | null);
     is_active?: boolean;
     is_superuser?: boolean;
-    full_name?: (string | null);
+    full_name?: string;
+    upload_limit_mb?: number;
     password?: (string | null);
 };
 
@@ -158,7 +165,7 @@ export type CasesReadCasesData = {
     skip?: number;
 };
 
-export type CasesReadCasesResponse = (CasesPublic);
+export type CasesReadCasesResponse = (Array<CasePublic>);
 
 export type CasesCreateCaseData = {
     requestBody: CaseCreate;
@@ -170,7 +177,7 @@ export type CasesReadCaseData = {
     id: string;
 };
 
-export type CasesReadCaseResponse = (CasePublic);
+export type CasesReadCaseResponse = (CaseDetailed);
 
 export type CasesUpdateCaseData = {
     id: string;
@@ -190,7 +197,7 @@ export type DocumentsReadDocumentsData = {
     skip?: number;
 };
 
-export type DocumentsReadDocumentsResponse = (DocumentsPublic);
+export type DocumentsReadDocumentsResponse = (Array<DocumentPublic>);
 
 export type DocumentsCreateDocumentData = {
     requestBody: DocumentCreate;
@@ -250,12 +257,12 @@ export type PrivateCreateUserData = {
 export type PrivateCreateUserResponse = (UserPublic);
 
 export type QueriesReadQueriesData = {
+    addDocuments?: boolean;
     caseId?: (string | null);
     limit?: number;
-    skip?: number;
 };
 
-export type QueriesReadQueriesResponse = (QueriesPublic);
+export type QueriesReadQueriesResponse = (Array<QueryPublic>);
 
 export type QueriesCreateQueryData = {
     caseId: string;
@@ -290,20 +297,20 @@ export type RatingsReadRatingsData = {
     skip?: number;
 };
 
-export type RatingsReadRatingsResponse = (RatingsPublic);
+export type RatingsReadRatingsResponse = (Array<RatingDetailed>);
 
 export type RatingsCreateRatingData = {
     requestBody: RatingCreate;
 };
 
-export type RatingsCreateRatingResponse = (RatingPublic);
+export type RatingsCreateRatingResponse = (RatingDetailed);
 
 export type RatingsReadRatingData = {
     documentId: string;
     queryId: string;
 };
 
-export type RatingsReadRatingResponse = (RatingPublic);
+export type RatingsReadRatingResponse = (RatingDetailed);
 
 export type RatingsUpdateRatingData = {
     documentId: string;
@@ -311,7 +318,7 @@ export type RatingsUpdateRatingData = {
     requestBody: RatingCreate;
 };
 
-export type RatingsUpdateRatingResponse = (RatingPublic);
+export type RatingsUpdateRatingResponse = (RatingDetailed);
 
 export type RatingsDeleteRatingData = {
     documentId: string;

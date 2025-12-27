@@ -31,7 +31,7 @@ function CasesTableContent() {
   const { data: cases } = useSuspenseQuery(getCasesQueryOptions())
   const navigate = useNavigate()
 
-  if (cases.data.length === 0) {
+  if (!cases || cases.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="rounded-full bg-muted p-4 mb-4">
@@ -46,9 +46,9 @@ function CasesTableContent() {
   return (
     <DataTable
       columns={columns}
-      data={cases.data}
+      data={cases}
       onRowClick={(caseObj) => {
-        navigate({ to: "/case/$id", params: { id: String(caseObj.id) } })
+        navigate({ to: "/case/$id", params: { id: caseObj.case_id } })
       }}
     />
   )
@@ -64,17 +64,19 @@ function CasesTable() {
 
 function Cases() {
   return (
-    <div className="flex flex-col gap-6">
-      <header className="sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b px-4">
-          <div className="flex items-center justify-between">
-              <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Cases</h1>
-                  <p className="text-muted-foreground">Create and manage your cases</p>
-              </div>
-              <CreateCase />
+    <div className="flex flex-col h-full">
+      <header className="shrink-0 border-b px-6 py-4 bg-background">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Cases</h1>
+            <p className="text-muted-foreground">Create and manage your cases</p>
           </div>
+          <CreateCase />
+        </div>
       </header>
-      <CasesTable />
+      <div className="page-content flex-1 overflow-y-auto px-6 py-4">
+        <CasesTable />
+      </div>
     </div>
   )
 }

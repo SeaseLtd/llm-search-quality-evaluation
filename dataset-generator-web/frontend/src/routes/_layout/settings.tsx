@@ -34,30 +34,32 @@ function UserSettings() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="sticky top-0 z-10 h-16 shrink-0 items-center gap-2 border-b px-4">
-          <div>
-              <h1 className="text-2xl font-bold tracking-tight">User Settings</h1>
-              <p className="text-muted-foreground">
-                  Manage your account settings and preferences
-              </p>
-          </div>
+    <div className="flex flex-col h-full">
+      <header className="shrink-0 border-b px-6 py-4 bg-background">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">User Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences
+          </p>
+        </div>
       </header>
 
-      <Tabs defaultValue="my-profile">
-        <TabsList>
+      <div className="page-content flex-1 overflow-y-auto px-6 py-4">
+        <Tabs defaultValue="my-profile">
+          <TabsList>
+            {finalTabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.title}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {finalTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.title}
-            </TabsTrigger>
+            <TabsContent key={tab.value} value={tab.value}>
+              <tab.component />
+            </TabsContent>
           ))}
-        </TabsList>
-        {finalTabs.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value}>
-            <tab.component />
-          </TabsContent>
-        ))}
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

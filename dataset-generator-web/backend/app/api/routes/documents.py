@@ -5,8 +5,9 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models.document import Document, DocumentPublic, DocumentCreate
-from app.models.message import Message
+from app.api.models.document import DocumentPublic, DocumentCreate
+from app.models.document import Document
+from app.api.models.message import Message
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -23,7 +24,7 @@ def read_documents(
 
 
 @router.get("/{id}", response_model=DocumentPublic)
-def read_document(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_document(session: SessionDep, id: uuid.UUID) -> Any:
     """
     Get document by ID.
     """
@@ -35,7 +36,7 @@ def read_document(session: SessionDep, current_user: CurrentUser, id: uuid.UUID)
 
 @router.post("/", response_model=DocumentPublic)
 def create_document(
-    *, session: SessionDep, current_user: CurrentUser, document_in: DocumentCreate
+    *, session: SessionDep, document_in: DocumentCreate
 ) -> Any:
     """
     Create new document.

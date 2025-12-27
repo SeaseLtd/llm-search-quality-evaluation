@@ -63,7 +63,7 @@ def test_get_existing_user(
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     user = crud.create_user(session=db, user_create=user_in)
-    user_id = user.id
+    user_id = user.user_id
     r = client.get(
         f"{settings.API_V1_STR}/users/{user_id}",
         headers=superuser_token_headers,
@@ -80,7 +80,7 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     user = crud.create_user(session=db, user_create=user_in)
-    user_id = user.id
+    user_id = user.user_id
 
     login_data = {
         "username": username,
@@ -330,7 +330,7 @@ def test_update_user(
 
     data = {"full_name": "Updated_full_name"}
     r = client.patch(
-        f"{settings.API_V1_STR}/users/{user.id}",
+        f"{settings.API_V1_STR}/users/{user.user_id}",
         headers=superuser_token_headers,
         json=data,
     )
@@ -374,7 +374,7 @@ def test_update_user_email_exists(
 
     data = {"email": user2.email}
     r = client.patch(
-        f"{settings.API_V1_STR}/users/{user.id}",
+        f"{settings.API_V1_STR}/users/{user.user_id}",
         headers=superuser_token_headers,
         json=data,
     )
@@ -387,7 +387,7 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     user = crud.create_user(session=db, user_create=user_in)
-    user_id = user.id
+    user_id = user.user_id
 
     login_data = {
         "username": username,
@@ -405,10 +405,10 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
     assert r.status_code == 200
     deleted_user = r.json()
     assert deleted_user["message"] == "User deleted successfully"
-    result = db.exec(select(User).where(User.id == user_id)).first()
+    result = db.exec(select(User).where(User.user_id == user_id)).first()
     assert result is None
 
-    user_query = select(User).where(User.id == user_id)
+    user_query = select(User).where(User.user_id == user_id)
     user_db = db.execute(user_query).first()
     assert user_db is None
 
@@ -432,7 +432,7 @@ def test_delete_user_super_user(
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     user = crud.create_user(session=db, user_create=user_in)
-    user_id = user.id
+    user_id = user.user_id
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user_id}",
         headers=superuser_token_headers,
@@ -440,7 +440,7 @@ def test_delete_user_super_user(
     assert r.status_code == 200
     deleted_user = r.json()
     assert deleted_user["message"] == "User deleted successfully"
-    result = db.exec(select(User).where(User.id == user_id)).first()
+    result = db.exec(select(User).where(User.user_id == user_id)).first()
     assert result is None
 
 
@@ -460,7 +460,7 @@ def test_delete_user_current_super_user_error(
 ) -> None:
     super_user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     assert super_user
-    user_id = super_user.id
+    user_id = super_user.user_id
 
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -479,7 +479,7 @@ def test_delete_user_without_privileges(
     user = crud.create_user(session=db, user_create=user_in)
 
     r = client.delete(
-        f"{settings.API_V1_STR}/users/{user.id}",
+        f"{settings.API_V1_STR}/users/{user.user_id}",
         headers=normal_user_token_headers,
     )
     assert r.status_code == 403
