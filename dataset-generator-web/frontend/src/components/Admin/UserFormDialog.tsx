@@ -29,7 +29,8 @@ import { LoadingButton } from "@/components/ui/loading-button"
 const createUserSchema = z
   .object({
     email: z.string().email({ message: "Invalid email address" }),
-    full_name: z.string().optional(),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
     password: z
       .string()
       .min(1, { message: "Password is required" })
@@ -48,7 +49,8 @@ const createUserSchema = z
 const editUserSchema = z
   .object({
     email: z.string().email({ message: "Invalid email address" }),
-    full_name: z.string().optional(),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
     password: z
       .string()
       .min(8, { message: "Password must be at least 8 characters" })
@@ -94,13 +96,15 @@ const UserFormDialog = ({
     defaultValues: isEditMode && user
       ? {
           email: user.email,
-          full_name: user.full_name ?? undefined,
+          first_name: user.first_name ?? undefined,
+          last_name: user.last_name ?? undefined,
           is_superuser: user.is_superuser,
           is_active: user.is_active,
         }
       : {
           email: "",
-          full_name: "",
+          first_name: "",
+          last_name: "",
           password: "",
           confirm_password: "",
           is_superuser: false,
@@ -159,12 +163,26 @@ const UserFormDialog = ({
 
               <FormField
                 control={form.control}
-                name="full_name"
+                name="first_name"
                 render={({ field }) => (
                   <FormCase>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Full name" type="text" {...field} />
+                      <Input placeholder="First name" type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormCase>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormCase>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Last name" type="text" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormCase>

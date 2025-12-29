@@ -11,10 +11,13 @@ export type UserTableData = UserPublic & {
 
 export const columns: ColumnDef<UserTableData>[] = [
   {
-    accessorKey: "full_name",
+    accessorKey: "first_name",
     header: "Full Name",
     cell: ({ row }) => {
-      const fullName = row.original.full_name
+      const firstName = row.original.first_name
+      const lastName = row.original.last_name
+      const fullName = [firstName, lastName].filter(Boolean).join(" ")
+
       return (
         <div className="flex items-center gap-2">
           <span
@@ -69,7 +72,7 @@ export const columns: ColumnDef<UserTableData>[] = [
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => (
       <div
-        className="flex justify-end"
+        className="flex justify-end py-0"
         onClick={(e) => e.stopPropagation()}
       >
         <UserActionsMenu user={row.original} />

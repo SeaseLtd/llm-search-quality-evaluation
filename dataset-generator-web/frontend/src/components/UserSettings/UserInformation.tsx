@@ -22,7 +22,8 @@ import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
-  full_name: z.string().max(30).optional(),
+  first_name: z.string().max(30).optional(),
+  last_name: z.string().max(30).optional(),
   email: z.email({ message: "Invalid email address" }),
 })
 
@@ -39,7 +40,8 @@ const UserInformation = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      full_name: currentUser?.full_name ?? undefined,
+      first_name: currentUser?.first_name ?? undefined,
+      last_name: currentUser?.last_name ?? undefined,
       email: currentUser?.email,
     },
   })
@@ -65,8 +67,11 @@ const UserInformation = () => {
     const updateData: UserUpdateMe = {}
 
     // only include fields that have changed
-    if (data.full_name !== currentUser?.full_name) {
-      updateData.full_name = data.full_name
+    if (data.first_name !== currentUser?.first_name) {
+      updateData.first_name = data.first_name
+    }
+    if (data.last_name !== currentUser?.last_name) {
+      updateData.last_name = data.last_name
     }
     if (data.email !== currentUser?.email) {
       updateData.email = data.email
@@ -90,11 +95,11 @@ const UserInformation = () => {
         >
           <FormField
             control={form.control}
-            name="full_name"
+            name="first_name"
             render={({ field }) =>
               editMode ? (
                 <FormCase>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>First name</FormLabel>
                   <FormControl>
                     <Input type="text" {...field} />
                   </FormControl>
@@ -102,7 +107,35 @@ const UserInformation = () => {
                 </FormCase>
               ) : (
                 <FormCase>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>First name</FormLabel>
+                  <p
+                    className={cn(
+                      "py-2 truncate max-w-sm",
+                      !field.value && "text-muted-foreground",
+                    )}
+                  >
+                    {field.value || "N/A"}
+                  </p>
+                </FormCase>
+              )
+            }
+          />
+
+          <FormField
+            control={form.control}
+            name="last_name"
+            render={({ field }) =>
+              editMode ? (
+                <FormCase>
+                  <FormLabel>Last name</FormLabel>
+                  <FormControl>
+                    <Input type="text" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormCase>
+              ) : (
+                <FormCase>
+                  <FormLabel>Last name</FormLabel>
                   <p
                     className={cn(
                       "py-2 truncate max-w-sm",

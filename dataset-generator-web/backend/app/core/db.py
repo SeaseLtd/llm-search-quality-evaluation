@@ -30,7 +30,7 @@ def init_db(session: Session) -> None:
     ).first()
     if not user:
         user_in = UserCreate(
-            full_name="Admin",
+            first_name="Admin",
             email=settings.FIRST_SUPERUSER,
             password=settings.FIRST_SUPERUSER_PASSWORD,
             is_superuser=True,

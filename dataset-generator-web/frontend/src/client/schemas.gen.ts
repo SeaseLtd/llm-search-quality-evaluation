@@ -380,9 +380,27 @@ export const PrivateUserCreateSchema = {
             type: 'string',
             title: 'Password'
         },
-        full_name: {
-            type: 'string',
-            title: 'Full Name'
+        first_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'First Name'
+        },
+        last_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Name'
         },
         is_verified: {
             type: 'boolean',
@@ -391,7 +409,7 @@ export const PrivateUserCreateSchema = {
         }
     },
     type: 'object',
-    required: ['email', 'password', 'full_name'],
+    required: ['email', 'password'],
     title: 'PrivateUserCreate'
 } as const;
 
@@ -627,10 +645,16 @@ export const UserCreateSchema = {
             title: 'Is Superuser',
             default: false
         },
-        full_name: {
+        first_name: {
             type: 'string',
             maxLength: 255,
-            title: 'Full Name',
+            title: 'First Name',
+            default: ''
+        },
+        last_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Last Name',
             default: ''
         },
         upload_limit_mb: {
@@ -669,10 +693,16 @@ export const UserPublicSchema = {
             title: 'Is Superuser',
             default: false
         },
-        full_name: {
+        first_name: {
             type: 'string',
             maxLength: 255,
-            title: 'Full Name',
+            title: 'First Name',
+            default: ''
+        },
+        last_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Last Name',
             default: ''
         },
         upload_limit_mb: {
@@ -730,7 +760,7 @@ export const UserRegisterSchema = {
             minLength: 8,
             title: 'Password'
         },
-        full_name: {
+        first_name: {
             anyOf: [
                 {
                     type: 'string',
@@ -740,7 +770,19 @@ export const UserRegisterSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Full Name'
+            title: 'First Name'
+        },
+        last_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Name'
         }
     },
     type: 'object',
@@ -773,10 +815,16 @@ export const UserUpdateSchema = {
             title: 'Is Superuser',
             default: false
         },
-        full_name: {
+        first_name: {
             type: 'string',
             maxLength: 255,
-            title: 'Full Name',
+            title: 'First Name',
+            default: ''
+        },
+        last_name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Last Name',
             default: ''
         },
         upload_limit_mb: {
@@ -805,7 +853,7 @@ export const UserUpdateSchema = {
 
 export const UserUpdateMeSchema = {
     properties: {
-        full_name: {
+        first_name: {
             anyOf: [
                 {
                     type: 'string',
@@ -815,7 +863,19 @@ export const UserUpdateMeSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Full Name'
+            title: 'First Name'
+        },
+        last_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Name'
         },
         email: {
             anyOf: [

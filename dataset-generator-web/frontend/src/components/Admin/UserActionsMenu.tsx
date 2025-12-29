@@ -20,9 +20,15 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
   const [open, setOpen] = useState(false)
   const { user: currentUser } = useAuth()
 
-  // Don't show actions menu for current user, but render empty space to keep column
-  if (user.user_id === currentUser?.user_id) {
-    return <div className="w-10" />
+  const isCurrentUser = user.user_id === currentUser?.user_id
+
+  // Show invisible button for current user to maintain consistent row height
+  if (isCurrentUser) {
+    return (
+      <Button variant="ghost" size="icon" className="invisible pointer-events-none">
+        <EllipsisVertical />
+      </Button>
+    )
   }
 
   return (

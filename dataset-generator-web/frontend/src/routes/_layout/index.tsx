@@ -317,12 +317,15 @@ function DashboardContent() {
 function Dashboard() {
   const { user: currentUser } = useAuth()
 
+  const userName = currentUser?.first_name || currentUser?.last_name
+  const greeting = userName ? `Hi, ${userName}` : "Hi"
+
   return (
     <div className="flex flex-col h-full">
       <header className="shrink-0 border-b px-6 py-2 bg-background">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Hi, {currentUser?.full_name || currentUser?.email} 👋
+            {greeting} 👋
           </h1>
         </div>
       </header>
