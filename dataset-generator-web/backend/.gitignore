@@ -1,4 +1,7 @@
-__pycache__
+# Python-generated files
+__pycache__/
+*.py[oc]
+
 app.egg-info
 *.pyc
 .mypy_cache
