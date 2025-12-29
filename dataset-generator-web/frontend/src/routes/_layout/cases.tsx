@@ -2,12 +2,17 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Search } from "lucide-react"
 import { Suspense } from "react"
+import { z } from "zod"
 
 import { CasesService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import CreateCase from "@/components/Cases/CreateCase.tsx"
 import { columns } from "@/components/Cases/columns"
 import PendingCases from "@/components/Pending/PendingCases.tsx"
+
+const casesSearchSchema = z.object({
+  create: z.boolean().optional(),
+})
 
 function getCasesQueryOptions() {
   return {
@@ -18,6 +23,7 @@ function getCasesQueryOptions() {
 
 export const Route = createFileRoute("/_layout/cases")({
   component: Cases,
+  validateSearch: (search) => casesSearchSchema.parse(search),
   head: () => ({
     meta: [
       {
@@ -63,6 +69,17 @@ function CasesTable() {
 }
 
 function Cases() {
+  const navigate = useNavigate()
+  const { create } = Route.useSearch()
+
+  const handleOpenChange = (open: boolean) => {
+    navigate({
+      to: "/cases",
+      search: open ? { create: true } : {},
+      replace: true,
+    })
+  }
+
   return (
     <div className="flex flex-col h-full">
       <header className="shrink-0 border-b px-6 py-2 bg-background">
@@ -70,7 +87,7 @@ function Cases() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Cases</h1>
           </div>
-          <CreateCase />
+          <CreateCase open={create} onOpenChange={handleOpenChange} />
         </div>
       </header>
       <div className="page-content flex-1 overflow-y-auto px-6 py-2">

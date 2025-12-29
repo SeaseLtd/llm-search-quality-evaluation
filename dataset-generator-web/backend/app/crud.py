@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlmodel import Session, select
@@ -50,10 +51,10 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
 
 def create_case(*, session: Session, case_in: Case, owner_id: uuid.UUID) -> Case:
     app.logger.info(f"Create case - case_in: {case_in}")
-    app.logger.info(f"Create case - owner_id: {owner_id}")
     db_case: Case = Case.model_validate(case_in, update={"owner_id": owner_id})
-    app.logger.info(f"Create case - db_case: {db_case}")
+    db_case.created_at = datetime.now(timezone.utc)
     session.add(db_case)
     session.commit()
     session.refresh(db_case)
+    app.logger.info(f"Create case - db_case: {db_case}")
     return db_case

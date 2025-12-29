@@ -25,9 +25,10 @@ def read_cases(
     Retrieve cases.
     """
     statement = (
-        select(Case).
-        offset(skip).
-        limit(limit)
+        select(Case)
+        .options(selectinload(Case.queries))
+        .offset(skip)
+        .limit(limit)
     )
 
     # Filter by owner_id only if not superuser
@@ -36,8 +37,16 @@ def read_cases(
 
     cases = session.exec(statement).all()
 
-    # Return empty list if no cases found (not 404)
-    return cases
+    return [
+        CasePublic.model_validate(
+            case,
+            update={
+                "num_queries": len(case.queries),
+                "updated_at": max([case.updated_at] + [query.updated_at for query in case.queries]) if case.queries else case.updated_at
+            }
+        )
+        for case in cases
+    ]
 
 
 @router.get("/{id}", response_model=CaseDetailed)
@@ -59,7 +68,7 @@ def read_case(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> 
 
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # for query in case.queries:
@@ -77,7 +86,7 @@ def create_case(
     """
     Create new case.
     """
-    case = Case.model_validate(case_in, update={"owner_id": current_user.id})
+    case = Case.model_validate(case_in, update={"owner_id": current_user.user_id})
     session.add(case)
     session.commit()
     session.refresh(case)
@@ -98,7 +107,7 @@ def update_case(
     case = session.get(Case, id)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = case_in.model_dump(exclude_unset=True)
     case.sqlmodel_update(update_dict)
@@ -118,7 +127,7 @@ def delete_case(
     case = session.get(Case, id)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.id):
+    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     session.delete(case)
     session.commit()

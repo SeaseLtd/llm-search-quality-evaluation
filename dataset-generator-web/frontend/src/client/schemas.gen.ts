@@ -86,6 +86,16 @@ export const CaseCreateSchema = {
             maxLength: 32,
             title: 'Document Title Field Name',
             default: 'title'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
         }
     },
     type: 'object',
@@ -125,6 +135,16 @@ export const CaseDetailedSchema = {
             title: 'Document Title Field Name',
             default: 'title'
         },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        },
         case_id: {
             type: 'string',
             format: 'uuid',
@@ -134,6 +154,11 @@ export const CaseDetailedSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Owner Id'
+        },
+        num_queries: {
+            type: 'integer',
+            title: 'Num Queries',
+            default: 0
         },
         queries: {
             items: {
@@ -180,6 +205,16 @@ export const CasePublicSchema = {
             title: 'Document Title Field Name',
             default: 'title'
         },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        },
         case_id: {
             type: 'string',
             format: 'uuid',
@@ -189,6 +224,11 @@ export const CasePublicSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Owner Id'
+        },
+        num_queries: {
+            type: 'integer',
+            title: 'Num Queries',
+            default: 0
         }
     },
     type: 'object',
@@ -234,6 +274,16 @@ export const CaseUpdateSchema = {
             maxLength: 32,
             title: 'Document Title Field Name',
             default: 'title'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
         }
     },
     type: 'object',
@@ -352,6 +402,16 @@ export const QueryCreateSchema = {
             maxLength: 255,
             minLength: 1,
             title: 'Query'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
         }
     },
     type: 'object',
@@ -366,6 +426,16 @@ export const QueryPublicSchema = {
             maxLength: 255,
             minLength: 1,
             title: 'Query'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
         },
         query_id: {
             type: 'string',
@@ -491,10 +561,14 @@ export const RatingDetailedSchema = {
         },
         document: {
             '$ref': '#/components/schemas/DocumentPublic'
+        },
+        position: {
+            type: 'integer',
+            title: 'Position'
         }
     },
     type: 'object',
-    required: ['llm_rating', 'user_rating', 'document'],
+    required: ['llm_rating', 'user_rating', 'document', 'position'],
     title: 'RatingDetailed'
 } as const;
 

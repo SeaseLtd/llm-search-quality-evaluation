@@ -37,10 +37,19 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
-const CreateCase = () => {
-  const [isOpen, setIsOpen] = useState(false)
+interface CreateCaseProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+const CreateCase = ({ open: externalOpen, onOpenChange: externalOnOpenChange }: CreateCaseProps = {}) => {
+  const [internalOpen, setInternalOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen
+  const setIsOpen = externalOnOpenChange || setInternalOpen
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

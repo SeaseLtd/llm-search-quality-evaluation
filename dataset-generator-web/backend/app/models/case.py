@@ -1,6 +1,8 @@
+from datetime import datetime, timezone
 import uuid
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, Column, DateTime
+from sqlalchemy import func
 
 from app.models.user import User
 
@@ -10,6 +12,15 @@ class CaseBase(SQLModel):
     description: str | None = Field(default=None, max_length=255)
     max_rating_value: int = Field(default=3, gt=0)
     document_title_field_name: str = Field(default="title", max_length=32)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs = {"onupdate": lambda: datetime.now(timezone.utc)},
+        nullable=False,
+    )
 
 
 # Database model, database table inferred from class name

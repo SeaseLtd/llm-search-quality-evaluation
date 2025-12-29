@@ -14,6 +14,8 @@ export type CaseCreate = {
     description?: (string | null);
     max_rating_value?: number;
     document_title_field_name?: string;
+    created_at?: string;
+    updated_at?: string;
 };
 
 export type CaseDetailed = {
@@ -21,8 +23,11 @@ export type CaseDetailed = {
     description?: (string | null);
     max_rating_value?: number;
     document_title_field_name?: string;
+    created_at?: string;
+    updated_at?: string;
     case_id: string;
     owner_id: string;
+    num_queries?: number;
     queries: Array<QueryPublic>;
 };
 
@@ -31,8 +36,11 @@ export type CasePublic = {
     description?: (string | null);
     max_rating_value?: number;
     document_title_field_name?: string;
+    created_at?: string;
+    updated_at?: string;
     case_id: string;
     owner_id: string;
+    num_queries?: number;
 };
 
 export type CaseUpdate = {
@@ -40,6 +48,8 @@ export type CaseUpdate = {
     description?: (string | null);
     max_rating_value?: number;
     document_title_field_name?: string;
+    created_at?: string;
+    updated_at?: string;
 };
 
 export type DocumentCreate = {
@@ -77,10 +87,14 @@ export type PrivateUserCreate = {
 
 export type QueryCreate = {
     query: string;
+    created_at?: string;
+    updated_at?: string;
 };
 
 export type QueryPublic = {
     query: string;
+    created_at?: string;
+    updated_at?: string;
     query_id: string;
     case_id: string;
     ratings: (Array<RatingDetailed> | null);
@@ -99,6 +113,7 @@ export type RatingDetailed = {
     user_rating: (number | null);
     explanation?: (string | null);
     document: DocumentPublic;
+    position: number;
 };
 
 export type Token = {

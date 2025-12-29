@@ -1,7 +1,11 @@
 import typing
 import uuid
+import datetime
 
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint
+from sqlalchemy import event
+from sqlalchemy.orm import Mapper
+from sqlalchemy.engine import Connection
 
 from app.models.query import Query
 from app.models.document import Document
@@ -24,4 +28,18 @@ class Rating(RatingBase, table=True):
     position: typing.Optional[int] = Field(nullable=True, ge=0)
     query: Query = Relationship(back_populates="ratings")
     document: Document = Relationship(back_populates="ratings")
+
+
+# Event listeners to update Query.updated_at when Rating changes
+@event.listens_for(Rating, 'after_insert')
+@event.listens_for(Rating, 'after_update')
+@event.listens_for(Rating, 'after_delete')
+def update_query_timestamp_from_rating(mapper: Mapper, connection: Connection, target: Rating) -> None:
+    """Update the parent Query's updated_at when a Rating is modified"""
+    connection.execute(
+        Query.__table__.update().
+        where(Query.query_id == target.query_id).
+        values(updated_at=datetime.datetime.now(datetime.timezone.utc))
+    )
+
 
