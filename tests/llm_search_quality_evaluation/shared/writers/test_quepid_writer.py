@@ -4,6 +4,7 @@ from pathlib import Path
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWriter, QUEPID_OUTPUT_FILENAME
 from llm_search_quality_evaluation.shared.models import Document
 
@@ -11,7 +12,7 @@ from llm_search_quality_evaluation.shared.models import Document
 @pytest.fixture
 def writer_config():
     return WriterConfig(
-        output_format='quepid',
+        output_format=OutputFormat.QUEPID,
         index='testcore'
     )
 

@@ -17,6 +17,7 @@ from llm_search_quality_evaluation.shared.logger import setup_logging
 from llm_search_quality_evaluation.dataset_generator.llm import LLMConfig, LLMService, LLMServiceFactory
 from llm_search_quality_evaluation.shared.models import Document, Query
 from llm_search_quality_evaluation.shared.writers import WriterFactory, AbstractWriter, WriterConfig
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.shared.search_engines import SearchEngineFactory, BaseSearchEngine
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.utils import join_fields_as_text
@@ -171,7 +172,7 @@ def main() -> None:
     # TODO:
     #  work on a better solution, instead of overwriting the corpus.json file, and maybe modify the MtebWriter with the
     #  fetch from the search engine
-    if config.output_format == "mteb":
+    if config.output_format == OutputFormat.MTEB:
         # copy pasted from MtebWriter
         corpus_path = Path(output_destination) / "corpus.jsonl"
         corpus_path.unlink(missing_ok=True)

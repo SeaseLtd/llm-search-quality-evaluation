@@ -4,6 +4,7 @@ from pydantic_core import ValidationError
 import pytest
 
 from llm_search_quality_evaluation.dataset_generator.config import Config
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ def test_good_config__expects__all_parameters_read(config):
     assert config.num_queries_needed == 10
     assert config.relevance_scale == "graded"
     assert config.llm_configuration_file == FilePath("tests/resources/llm_config.yaml")
-    assert config.output_format == "quepid"
+    assert config.output_format == OutputFormat.QUEPID
     assert config.output_destination == Path("output")
     assert config.save_llm_explanation is True
     assert config.llm_explanation_destination == Path("output/rating_explanation.json")
@@ -74,7 +75,7 @@ def test__expects__raises_file_not_found_error(resource_folder):
 def test_mteb_config__expects__successful_load(resource_folder):
     file_name = "mteb_config.yaml"
     mteb_config = Config.load(resource_folder / file_name)
-    assert mteb_config.output_format == "mteb"
+    assert mteb_config.output_format == OutputFormat.MTEB
     assert mteb_config.output_destination == Path("output")
 
 def test_missing_both_templates_with_rre__expects__raises_validation_error(resource_folder):

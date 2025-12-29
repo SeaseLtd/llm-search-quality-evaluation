@@ -6,13 +6,14 @@ import pytest
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.models import Document
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.shared.writers.mteb_writer import MtebWriter
 
 
 @pytest.fixture
 def writer_config():
     return WriterConfig(
-        output_format='mteb',
+        output_format=OutputFormat.MTEB,
         index='testcore'
     )
 

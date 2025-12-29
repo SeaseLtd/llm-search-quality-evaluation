@@ -10,6 +10,7 @@ from llm_search_quality_evaluation.shared.writers import RreWriter
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.logger import setup_logging
 from llm_search_quality_evaluation.shared.writers import WriterConfig
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.config import Config
 
 log = logging.getLogger(__name__)
@@ -157,7 +158,7 @@ def main() -> None:
                 id_field=config.id_field,
                 query_template=config.query_template.name,
                 query_placeholder=config.query_placeholder if config.query_placeholder is not None else "$query",
-                output_format='rre'
+                output_format=OutputFormat.RRE
             )
         )
         writer.write(ratings_folder, data_store)
