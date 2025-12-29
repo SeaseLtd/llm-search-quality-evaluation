@@ -6,6 +6,7 @@ class OutputFormat(str, Enum):
     QUEPID = "quepid"
     RRE = "rre"
     MTEB = "mteb"
+    VISUALIZER = "visualizer"
 
     def __str__(self) -> str:
         return self.value
