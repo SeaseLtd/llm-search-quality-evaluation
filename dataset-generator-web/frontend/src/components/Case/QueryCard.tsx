@@ -27,7 +27,7 @@ const calculateAverageRating = (ratings: Array<RatingDetailed> | null): number =
     return acc + ratingValue;
   }, 0);
 
-  return sum / ratings.length;
+  return Math.round((sum / ratings.length) * 100) / 100;
 };
 
 export default function QueryCard({

@@ -1,8 +1,9 @@
 from collections.abc import Generator
 from typing import Annotated
+import uuid
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Path
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
@@ -12,6 +13,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.db import engine
 from app.models.user import User, TokenPayload
+from app.models.case import Case
 
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -56,3 +58,30 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def get_validated_case(
+    case_id: Annotated[uuid.UUID, Path()],
+    session: SessionDep,
+    current_user: CurrentUser
+) -> Case:
+    """
+    Validates that:
+    1. The case exists
+    2. The current user has permission to access it (owner or superuser)
+
+    Returns the validated Case object.
+    Raises HTTPException if validation fails.
+    """
+    case = session.get(Case, case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    if not current_user.is_superuser and case.owner_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    return case
+
+
+ValidatedCaseDep = Annotated[Case, Depends(get_validated_case)]
+

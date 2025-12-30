@@ -27,7 +27,7 @@ search_engine_url: "http://localhost:8983/solr/"
 #      - "book"
 
 # Maximum number of documents to retrieve from the search engine to generate queries
-number_of_docs: 200
+number_of_docs: 5
 
 # List of fields from documents used to generate queries and relevance scoring
 # These should match fields available in the search engine schema
@@ -46,7 +46,7 @@ queries: "examples/queries.txt"
 generate_queries_from_documents: true
 
 # Total number of queries to generate (includes predefined queries, if any)
-num_queries_needed: 30
+num_queries_needed: 3
 
 # Relevance scale used for scoring document relevance
 # Accepted values:

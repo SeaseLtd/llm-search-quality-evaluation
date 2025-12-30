@@ -30,8 +30,8 @@ const DeleteCase = ({ id, onSuccess }: DeleteCaseProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
-  const deleteCase = async (id: string) => {
-    await CasesService.deleteCase({ id: id })
+  const deleteCase = async (case_id: string) => {
+    await CasesService.deleteCase({ caseId: case_id })
   }
 
   const mutation = useMutation({

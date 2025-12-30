@@ -3,29 +3,19 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CasesReadCasesData, CasesReadCasesResponse, CasesCreateCaseData, CasesCreateCaseResponse, CasesReadCaseData, CasesReadCaseResponse, CasesUpdateCaseData, CasesUpdateCaseResponse, CasesDeleteCaseData, CasesDeleteCaseResponse, CasesUploadDatasetData, CasesUploadDatasetResponse, DocumentsReadDocumentsData, DocumentsReadDocumentsResponse, DocumentsCreateDocumentData, DocumentsCreateDocumentResponse, DocumentsReadDocumentData, DocumentsReadDocumentResponse, DocumentsUpdateDocumentData, DocumentsUpdateDocumentResponse, DocumentsDeleteDocumentData, DocumentsDeleteDocumentResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, QueriesReadQueriesData, QueriesReadQueriesResponse, QueriesCreateQueryData, QueriesCreateQueryResponse, QueriesReadQueryData, QueriesReadQueryResponse, QueriesUpdateQueryData, QueriesUpdateQueryResponse, QueriesDeleteQueryData, QueriesDeleteQueryResponse, RatingsReadRatingsData, RatingsReadRatingsResponse, RatingsCreateRatingData, RatingsCreateRatingResponse, RatingsReadRatingData, RatingsReadRatingResponse, RatingsUpdateUserRatingData, RatingsUpdateUserRatingResponse, RatingsDeleteRatingData, RatingsDeleteRatingResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CasesReadCasesResponse, CasesCreateCaseData, CasesCreateCaseResponse, CasesReadCaseData, CasesReadCaseResponse, CasesUpdateCaseData, CasesUpdateCaseResponse, CasesDeleteCaseData, CasesDeleteCaseResponse, CasesUploadDatasetData, CasesUploadDatasetResponse, DocumentsReadDocumentsResponse, DocumentsReadDocumentData, DocumentsReadDocumentResponse, DocumentsUpdateDocumentData, DocumentsUpdateDocumentResponse, DocumentsDeleteDocumentData, DocumentsDeleteDocumentResponse, DocumentsCreateDocumentData, DocumentsCreateDocumentResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, QueriesReadQueriesData, QueriesReadQueriesResponse, QueriesReadQueryData, QueriesReadQueryResponse, QueriesUpdateQueryData, QueriesUpdateQueryResponse, QueriesDeleteQueryData, QueriesDeleteQueryResponse, QueriesCreateQueryData, QueriesCreateQueryResponse, RatingsReadRatingsData, RatingsReadRatingsResponse, RatingsReadRatingData, RatingsReadRatingResponse, RatingsUpdateUserRatingData, RatingsUpdateUserRatingResponse, RatingsDeleteRatingData, RatingsDeleteRatingResponse, RatingsCreateRatingData, RatingsCreateRatingResponse, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class CasesService {
     /**
      * Read Cases
      * Retrieve cases.
-     * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
      * @returns CasePublic Successful Response
      * @throws ApiError
      */
-    public static readCases(data: CasesReadCasesData = {}): CancelablePromise<CasesReadCasesResponse> {
+    public static readCases(): CancelablePromise<CasesReadCasesResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/cases/',
-            query: {
-                skip: data.skip,
-                limit: data.limit
-            },
-            errors: {
-                422: 'Validation Error'
-            }
+            url: '/api/v1/cases/'
         });
     }
     
@@ -53,16 +43,16 @@ export class CasesService {
      * Read Case
      * Get case by ID with all queries, documents and ratings.
      * @param data The data for the request.
-     * @param data.id
+     * @param data.caseId
      * @returns CaseDetailed Successful Response
      * @throws ApiError
      */
     public static readCase(data: CasesReadCaseData): CancelablePromise<CasesReadCaseResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/cases/{id}',
+            url: '/api/v1/cases/{case_id}',
             path: {
-                id: data.id
+                case_id: data.caseId
             },
             errors: {
                 422: 'Validation Error'
@@ -74,7 +64,7 @@ export class CasesService {
      * Update Case
      * Update an case.
      * @param data The data for the request.
-     * @param data.id
+     * @param data.caseId
      * @param data.requestBody
      * @returns CasePublic Successful Response
      * @throws ApiError
@@ -82,9 +72,9 @@ export class CasesService {
     public static updateCase(data: CasesUpdateCaseData): CancelablePromise<CasesUpdateCaseResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/cases/{id}',
+            url: '/api/v1/cases/{case_id}',
             path: {
-                id: data.id
+                case_id: data.caseId
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -98,16 +88,16 @@ export class CasesService {
      * Delete Case
      * Delete a case.
      * @param data The data for the request.
-     * @param data.id
+     * @param data.caseId
      * @returns Message Successful Response
      * @throws ApiError
      */
     public static deleteCase(data: CasesDeleteCaseData): CancelablePromise<CasesDeleteCaseResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/cases/{id}',
+            url: '/api/v1/cases/{case_id}',
             path: {
-                id: data.id
+                case_id: data.caseId
             },
             errors: {
                 422: 'Validation Error'
@@ -120,7 +110,7 @@ export class CasesService {
      * Upload a dataset file (JSON or GZ) to a case.
      * This operation will replace all existing queries, documents, and ratings.
      * @param data The data for the request.
-     * @param data.id
+     * @param data.caseId
      * @param data.formData
      * @returns CaseDetailed Successful Response
      * @throws ApiError
@@ -128,9 +118,9 @@ export class CasesService {
     public static uploadDataset(data: CasesUploadDatasetData): CancelablePromise<CasesUploadDatasetResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/cases/{id}/upload_dataset',
+            url: '/api/v1/cases/{case_id}/upload_dataset',
             path: {
-                id: data.id
+                case_id: data.caseId
             },
             formData: data.formData,
             mediaType: 'multipart/form-data',
@@ -145,60 +135,32 @@ export class DocumentsService {
     /**
      * Read Documents
      * Retrieve documents.
-     * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
      * @returns DocumentPublic Successful Response
      * @throws ApiError
      */
-    public static readDocuments(data: DocumentsReadDocumentsData = {}): CancelablePromise<DocumentsReadDocumentsResponse> {
+    public static readDocuments(): CancelablePromise<DocumentsReadDocumentsResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/documents/',
-            query: {
-                skip: data.skip,
-                limit: data.limit
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Create Document
-     * Create new document.
-     * @param data The data for the request.
-     * @param data.requestBody
-     * @returns DocumentPublic Successful Response
-     * @throws ApiError
-     */
-    public static createDocument(data: DocumentsCreateDocumentData): CancelablePromise<DocumentsCreateDocumentResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/documents/',
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
+            url: '/api/v1/documents/'
         });
     }
     
     /**
      * Read Document
-     * Get document by ID.
+     * Get document by composite key (case_id, document_id).
      * @param data The data for the request.
-     * @param data.id
+     * @param data.documentId
+     * @param data.caseId
      * @returns DocumentPublic Successful Response
      * @throws ApiError
      */
     public static readDocument(data: DocumentsReadDocumentData): CancelablePromise<DocumentsReadDocumentResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/documents/{id}',
+            url: '/api/v1/documents/{case_id}/{document_id}',
             path: {
-                id: data.id
+                document_id: data.documentId,
+                case_id: data.caseId
             },
             errors: {
                 422: 'Validation Error'
@@ -210,7 +172,8 @@ export class DocumentsService {
      * Update Document
      * Update a document.
      * @param data The data for the request.
-     * @param data.id
+     * @param data.documentId
+     * @param data.caseId
      * @param data.requestBody
      * @returns DocumentPublic Successful Response
      * @throws ApiError
@@ -218,9 +181,10 @@ export class DocumentsService {
     public static updateDocument(data: DocumentsUpdateDocumentData): CancelablePromise<DocumentsUpdateDocumentResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/documents/{id}',
+            url: '/api/v1/documents/{case_id}/{document_id}',
             path: {
-                id: data.id
+                document_id: data.documentId,
+                case_id: data.caseId
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -234,17 +198,43 @@ export class DocumentsService {
      * Delete Document
      * Delete a document.
      * @param data The data for the request.
-     * @param data.id
+     * @param data.documentId
+     * @param data.caseId
      * @returns Message Successful Response
      * @throws ApiError
      */
     public static deleteDocument(data: DocumentsDeleteDocumentData): CancelablePromise<DocumentsDeleteDocumentResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/documents/{id}',
+            url: '/api/v1/documents/{case_id}/{document_id}',
             path: {
-                id: data.id
+                document_id: data.documentId,
+                case_id: data.caseId
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Document
+     * Create new document.
+     * @param data The data for the request.
+     * @param data.caseId
+     * @param data.requestBody
+     * @returns DocumentPublic Successful Response
+     * @throws ApiError
+     */
+    public static createDocument(data: DocumentsCreateDocumentData): CancelablePromise<DocumentsCreateDocumentResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/documents/{case_id}/',
+            path: {
+                case_id: data.caseId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -378,7 +368,6 @@ export class QueriesService {
      * @param data The data for the request.
      * @param data.caseId
      * @param data.addDocuments
-     * @param data.limit
      * @returns QueryPublic Successful Response
      * @throws ApiError
      */
@@ -388,8 +377,79 @@ export class QueriesService {
             url: '/api/v1/queries/',
             query: {
                 case_id: data.caseId,
-                add_documents: data.addDocuments,
-                limit: data.limit
+                add_documents: data.addDocuments
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Query
+     * Get query by composite key (query_id, case_id).
+     * @param data The data for the request.
+     * @param data.queryId
+     * @param data.caseId
+     * @returns QueryPublic Successful Response
+     * @throws ApiError
+     */
+    public static readQuery(data: QueriesReadQueryData): CancelablePromise<QueriesReadQueryResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/queries/{case_id}/{query_id}',
+            path: {
+                query_id: data.queryId,
+                case_id: data.caseId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Query
+     * Update a query.
+     * @param data The data for the request.
+     * @param data.queryId
+     * @param data.caseId
+     * @param data.requestBody
+     * @returns QueryPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateQuery(data: QueriesUpdateQueryData): CancelablePromise<QueriesUpdateQueryResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/queries/{case_id}/{query_id}',
+            path: {
+                query_id: data.queryId,
+                case_id: data.caseId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Query
+     * Delete a query.
+     * @param data The data for the request.
+     * @param data.queryId
+     * @param data.caseId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteQuery(data: QueriesDeleteQueryData): CancelablePromise<QueriesDeleteQueryResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/queries/{case_id}/{query_id}',
+            path: {
+                query_id: data.queryId,
+                case_id: data.caseId
             },
             errors: {
                 422: 'Validation Error'
@@ -409,78 +469,12 @@ export class QueriesService {
     public static createQuery(data: QueriesCreateQueryData): CancelablePromise<QueriesCreateQueryResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/queries/',
-            query: {
+            url: '/api/v1/queries/{case_id}/',
+            path: {
                 case_id: data.caseId
             },
             body: data.requestBody,
             mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Read Query
-     * Get query by ID.
-     * @param data The data for the request.
-     * @param data.id
-     * @returns QueryPublic Successful Response
-     * @throws ApiError
-     */
-    public static readQuery(data: QueriesReadQueryData): CancelablePromise<QueriesReadQueryResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/queries/{id}',
-            path: {
-                id: data.id
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Update Query
-     * Update a query.
-     * @param data The data for the request.
-     * @param data.id
-     * @param data.requestBody
-     * @returns QueryPublic Successful Response
-     * @throws ApiError
-     */
-    public static updateQuery(data: QueriesUpdateQueryData): CancelablePromise<QueriesUpdateQueryResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/v1/queries/{id}',
-            path: {
-                id: data.id
-            },
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Delete Query
-     * Delete a query.
-     * @param data The data for the request.
-     * @param data.id
-     * @returns Message Successful Response
-     * @throws ApiError
-     */
-    public static deleteQuery(data: QueriesDeleteQueryData): CancelablePromise<QueriesDeleteQueryResponse> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/queries/{id}',
-            path: {
-                id: data.id
-            },
             errors: {
                 422: 'Validation Error'
             }
@@ -495,8 +489,6 @@ export class RatingsService {
      * @param data The data for the request.
      * @param data.queryId
      * @param data.documentId
-     * @param data.skip
-     * @param data.limit
      * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
@@ -506,9 +498,7 @@ export class RatingsService {
             url: '/api/v1/ratings/',
             query: {
                 query_id: data.queryId,
-                document_id: data.documentId,
-                skip: data.skip,
-                limit: data.limit
+                document_id: data.documentId
             },
             errors: {
                 422: 'Validation Error'
@@ -517,41 +507,23 @@ export class RatingsService {
     }
     
     /**
-     * Create Rating
-     * Create new rating.
-     * @param data The data for the request.
-     * @param data.requestBody
-     * @returns RatingDetailed Successful Response
-     * @throws ApiError
-     */
-    public static createRating(data: RatingsCreateRatingData): CancelablePromise<RatingsCreateRatingResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/ratings/',
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
      * Read Rating
-     * Get rating by query_id and document_id.
+     * Get rating by composite key (case_id, query_id, document_id).
      * @param data The data for the request.
      * @param data.queryId
      * @param data.documentId
+     * @param data.caseId
      * @returns RatingDetailed Successful Response
      * @throws ApiError
      */
     public static readRating(data: RatingsReadRatingData): CancelablePromise<RatingsReadRatingResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/ratings/{query_id}/{document_id}',
+            url: '/api/v1/ratings/{case_id}/{query_id}/{document_id}',
             path: {
                 query_id: data.queryId,
-                document_id: data.documentId
+                document_id: data.documentId,
+                case_id: data.caseId
             },
             errors: {
                 422: 'Validation Error'
@@ -565,6 +537,7 @@ export class RatingsService {
      * @param data The data for the request.
      * @param data.queryId
      * @param data.documentId
+     * @param data.caseId
      * @param data.requestBody
      * @returns RatingDetailed Successful Response
      * @throws ApiError
@@ -572,10 +545,11 @@ export class RatingsService {
     public static updateUserRating(data: RatingsUpdateUserRatingData): CancelablePromise<RatingsUpdateUserRatingResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/ratings/{query_id}/{document_id}',
+            url: '/api/v1/ratings/{case_id}/{query_id}/{document_id}',
             path: {
                 query_id: data.queryId,
-                document_id: data.documentId
+                document_id: data.documentId,
+                case_id: data.caseId
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -591,17 +565,43 @@ export class RatingsService {
      * @param data The data for the request.
      * @param data.queryId
      * @param data.documentId
+     * @param data.caseId
      * @returns Message Successful Response
      * @throws ApiError
      */
     public static deleteRating(data: RatingsDeleteRatingData): CancelablePromise<RatingsDeleteRatingResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/ratings/{query_id}/{document_id}',
+            url: '/api/v1/ratings/{case_id}/{query_id}/{document_id}',
             path: {
                 query_id: data.queryId,
-                document_id: data.documentId
+                document_id: data.documentId,
+                case_id: data.caseId
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Rating
+     * Create new rating.
+     * @param data The data for the request.
+     * @param data.caseId
+     * @param data.requestBody
+     * @returns RatingDetailed Successful Response
+     * @throws ApiError
+     */
+    public static createRating(data: RatingsCreateRatingData): CancelablePromise<RatingsCreateRatingResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/ratings/{case_id}/',
+            path: {
+                case_id: data.caseId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -612,24 +612,14 @@ export class RatingsService {
 export class UsersService {
     /**
      * Read Users
-     * Retrieve users.
-     * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
+     * Retrieve all users.
      * @returns UsersPublic Successful Response
      * @throws ApiError
      */
-    public static readUsers(data: UsersReadUsersData = {}): CancelablePromise<UsersReadUsersResponse> {
+    public static readUsers(): CancelablePromise<UsersReadUsersResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/users/',
-            query: {
-                skip: data.skip,
-                limit: data.limit
-            },
-            errors: {
-                422: 'Validation Error'
-            }
+            url: '/api/v1/users/'
         });
     }
     

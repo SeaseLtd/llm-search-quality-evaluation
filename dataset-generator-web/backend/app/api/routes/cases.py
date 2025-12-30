@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, ValidatedCaseDep
 from app.api.models.case import CasePublic, CaseCreate, CaseUpdate, CaseDetailed, CaseUploadDataset
 
 from app.models.case import Case
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/cases", tags=["cases"])
 
 @router.get("/", response_model=list[CasePublic])
 def read_cases(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep, current_user: CurrentUser
 ) -> Any:
     """
     Retrieve cases.
@@ -30,8 +30,6 @@ def read_cases(
     statement = (
         select(Case)
         .options(selectinload(Case.queries))
-        .offset(skip)
-        .limit(limit)
     )
 
     # Filter by owner_id only if not superuser
@@ -52,8 +50,8 @@ def read_cases(
     ]
 
 
-@router.get("/{id}", response_model=CaseDetailed)
-def read_case(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> CaseDetailed:
+@router.get("/{case_id}", response_model=CaseDetailed)
+def read_case(session: SessionDep, current_user: CurrentUser, case_id: uuid.UUID) -> CaseDetailed:
     """
     Get case by ID with all queries, documents and ratings.
     """
@@ -65,7 +63,7 @@ def read_case(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> 
             .selectinload(Query.ratings)
             .selectinload(Rating.document)
         )
-        .where(Case.case_id == id)
+        .where(Case.case_id == case_id)
     )
     case: Case = session.exec(statement).one_or_none()
 
@@ -96,75 +94,60 @@ def create_case(
     return case
 
 
-@router.put("/{id}", response_model=CasePublic)
+@router.put("/{case_id}", response_model=CasePublic)
 def update_case(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    validated_case: ValidatedCaseDep,
     case_in: CaseUpdate,
 ) -> Any:
     """
     Update an case.
     """
-    case = session.get(Case, id)
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+
     update_dict = case_in.model_dump(exclude_unset=True)
-    case.sqlmodel_update(update_dict)
-    session.add(case)
+    validated_case.sqlmodel_update(update_dict)
+    session.add(validated_case)
     session.commit()
-    session.refresh(case)
-    return case
+    session.refresh(validated_case)
+    return validated_case
 
 
-@router.delete("/{id}")
+@router.delete("/{case_id}")
 def delete_case(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    session: SessionDep, validated_case: ValidatedCaseDep
 ) -> Message:
     """
     Delete a case.
     """
-    case = session.get(Case, id)
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    session.delete(case)
+
+    session.delete(validated_case)
     session.commit()
     return Message(message="Cases deleted successfully")
 
 
-@router.post("/{id}/upload_dataset", response_model=CaseDetailed)
+@router.post("/{case_id}/upload_dataset", response_model=CaseDetailed)
 async def upload_dataset(
     *,
     session: SessionDep,
     current_user: CurrentUser,
-    id: uuid.UUID,
+    case: ValidatedCaseDep,
     file: UploadFile = File(...)
 ) -> CaseDetailed:
     """
     Upload a dataset file (JSON or GZ) to a case.
     This operation will replace all existing queries, documents, and ratings.
     """
-    # Get the case
-    case = session.get(Case, id)
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-
-    # Validate file extension
-    filename = file.filename or ""
-    if not (filename.endswith('.json') or filename.endswith('.gz')):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid file format. Only .json and .gz files are supported"
-        )
 
     try:
+        # Validate file extension
+        filename = file.filename or ""
+        if not (filename.endswith('.json') or filename.endswith('.gz')):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file format. Only .json and .gz files are supported"
+            )
+
         # Read file content
         content = await file.read()
 
@@ -182,111 +165,82 @@ async def upload_dataset(
                 detail="Invalid dataset format. Required keys: queries, documents, ratings, max_rating_value"
             )
 
-        dataset = CaseUploadDataset(**dataset_data)
+        # Delete all existing queries (cascade will delete ratings)
+        # First get all queries for this case
+        existing_queries = session.exec(
+            select(Query).where(Query.case_id == case.case_id)
+        ).all()
 
+        for query in existing_queries:
+            session.delete(query)
+
+        # Delete all orphaned documents (documents not referenced by other cases)
+        # For now, we delete all documents referenced by ratings of this case's queries
+        # This is a simplified approach - in production you might want to track document usage
+        existing_ratings = session.exec(
+            select(Rating).where(Rating.query_id.in_([q.query_id for q in existing_queries]))
+        ).all()
+
+        doc_ids_to_check = {r.document_id for r in existing_ratings}
+        for doc_id in doc_ids_to_check:
+            # Check if document is still referenced by other ratings
+            other_ratings = session.exec(
+                select(Rating).where(
+                    Rating.document_id == doc_id,
+                    Rating.query_id.notin_([q.query_id for q in existing_queries])
+                )
+            ).first()
+
+            if not other_ratings:
+                doc = session.get(Document, doc_id)
+                if doc:
+                    session.delete(doc)
+
+        case.max_rating_value = int(dataset_data['max_rating_value'])
+        case.queries = [
+            Query(
+                case_id=case.case_id,
+                query_id=query['id'],
+                query=query['text'],
+                ratings=[
+                    Rating(
+                        case_id=case.case_id,
+                        query_id=query['id'],
+                        document_id=rating['doc_id'],
+                        position=position,
+                        llm_rating=rating['score'],
+                        explanation=rating['explanation'] if 'explanation' in rating else None,
+                        document=Document(
+                            case_id=case.case_id,
+                            document_id=rating['doc_id'],
+                            fields={
+                                fieldName: value[0] if isinstance(value, list) and len(value) == 1 else value
+                                for document in dataset_data['documents']
+                                for fieldName, value in document['fields'].items()
+                                if document['id'] == rating['doc_id']
+                            }
+                        )
+                    )
+                    for position, rating in enumerate(dataset_data['ratings']) if rating['query_id'] == query['id']
+                ]
+            ) for query in dataset_data['queries']
+        ]
+
+        session.commit()
+
+        # Return the updated case using read_case logic
+        return read_case(session=session, current_user=current_user, case_id=case.case_id)
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except json.JSONDecodeError as e:
+        app.logger.error(f"JSON decode error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(e)}")
-    except gzip.BadGzipFile:
+    except gzip.BadGzipFile as e:
+        app.logger.error(f"Gzip error: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid gzip file")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
-
-    # Delete all existing queries (cascade will delete ratings)
-    # First get all queries for this case
-    existing_queries = session.exec(
-        select(Query).where(Query.case_id == id)
-    ).all()
-
-    for query in existing_queries:
-        session.delete(query)
-
-    # Delete all orphaned documents (documents not referenced by other cases)
-    # For now, we delete all documents referenced by ratings of this case's queries
-    # This is a simplified approach - in production you might want to track document usage
-    existing_ratings = session.exec(
-        select(Rating).where(Rating.query_id.in_([q.query_id for q in existing_queries]))
-    ).all()
-
-    doc_ids_to_check = {r.document_id for r in existing_ratings}
-    for doc_id in doc_ids_to_check:
-        # Check if document is still referenced by other ratings
-        other_ratings = session.exec(
-            select(Rating).where(
-                Rating.document_id == doc_id,
-                Rating.query_id.notin_([q.query_id for q in existing_queries])
-            )
-        ).first()
-
-        if not other_ratings:
-            doc = session.get(Document, doc_id)
-            if doc:
-                session.delete(doc)
-
-    session.commit()
-
-    # Update case max_rating_value
-    case.max_rating_value = dataset.max_rating_value
-    session.add(case)
-    session.commit()
-
-    # Create documents first and track their mapping
-    document_id_mapping = {}  # old_id -> new_uuid
-    for doc_data in dataset.documents:
-        old_id = doc_data.get('id')
-        if not old_id:
-            continue
-
-        # Create new document
-        new_doc = Document(
-            fields=doc_data.get('fields', {})
-        )
-        session.add(new_doc)
-        session.flush()  # Get the new UUID
-        document_id_mapping[old_id] = new_doc.document_id
-
-    # Create queries and track their mapping
-    query_id_mapping = {}  # old_id -> new_uuid
-    for query_data in dataset.queries:
-        old_id = query_data.get('id')
-        query_text = query_data.get('text', '')
-
-        if not old_id or not query_text:
-            continue
-
-        # Create new query
-        new_query = Query(
-            query=query_text,
-            case_id=id
-        )
-        session.add(new_query)
-        session.flush()  # Get the new UUID
-        query_id_mapping[old_id] = new_query.query_id
-
-    # Create ratings
-    for rating_data in dataset.ratings:
-        old_query_id = rating_data.get('query_id')
-        old_doc_id = rating_data.get('doc_id')
-
-        # Map old IDs to new UUIDs
-        new_query_id = query_id_mapping.get(old_query_id)
-        new_doc_id = document_id_mapping.get(old_doc_id)
-
-        if not new_query_id or not new_doc_id:
-            continue
-
-        # Create new rating
-        new_rating = Rating(
-            query_id=new_query_id,
-            document_id=new_doc_id,
-            llm_rating=rating_data.get('score'),
-            user_rating=None,
-            explanation=rating_data.get('explanation'),
-            position=rating_data.get('position', 0)
-        )
-        session.add(new_rating)
-
-    session.commit()
-
-    # Return the updated case using read_case logic
-    return read_case(session=session, current_user=current_user, id=id)
+        app.logger.error(f"Unexpected error in upload_dataset: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 

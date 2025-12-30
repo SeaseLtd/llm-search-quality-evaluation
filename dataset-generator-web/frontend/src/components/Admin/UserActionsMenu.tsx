@@ -40,7 +40,7 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditUser user={user} onSuccess={() => setOpen(false)} />
-        <DeleteUser id={user.user_id} onSuccess={() => setOpen(false)} />
+        <DeleteUser user_id={user.user_id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

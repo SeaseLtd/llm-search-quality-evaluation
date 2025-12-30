@@ -3,7 +3,7 @@ import uuid
 import datetime
 
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint
-from sqlalchemy import event
+from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.orm import Mapper
 from sqlalchemy.engine import Connection
 
@@ -20,11 +20,14 @@ class RatingBase(SQLModel):
 # Database model, database table inferred from class name
 class Rating(RatingBase, table=True):
     __table_args__ = (
+        ForeignKeyConstraint(["case_id", "query_id"], ["query.case_id", "query.query_id"], ondelete="CASCADE", name="fk_rating_query"),
+        ForeignKeyConstraint(["case_id", "document_id"], ["document.case_id", "document.document_id"], ondelete="CASCADE", name="fk_rating_document"),
         UniqueConstraint("query_id", "position", name="uq_rating_query_position"),
     )
 
-    query_id: uuid.UUID = Field(foreign_key="query.query_id", primary_key=True, nullable=False, ondelete="CASCADE")
-    document_id: uuid.UUID = Field(foreign_key="document.document_id", primary_key=True, nullable=False, ondelete="CASCADE")
+    case_id: uuid.UUID = Field(primary_key=True, nullable=False, foreign_key="case.case_id", ondelete="CASCADE")
+    query_id: str = Field(primary_key=True, nullable=False)
+    document_id: str = Field(primary_key=True, nullable=False)
     position: typing.Optional[int] = Field(nullable=True, ge=0)
     query: Query = Relationship(back_populates="ratings")
     document: Document = Relationship(back_populates="ratings")

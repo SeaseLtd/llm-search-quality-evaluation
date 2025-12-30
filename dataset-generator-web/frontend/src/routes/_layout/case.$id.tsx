@@ -11,10 +11,10 @@ import {handleError} from "@/utils";
 type QueryWithExpanded = QueryPublic & { expanded: boolean };
 
 
-function getCaseDetailsQueryOptions(id: string) {
+function getCaseDetailsQueryOptions(case_id: string) {
     return {
-        queryFn: () => CasesService.readCase({id: id}),
-        queryKey: ["case_details", id],
+        queryFn: () => CasesService.readCase({caseId: case_id}),
+        queryKey: ["case_details", case_id],
     }
 }
 
@@ -58,11 +58,10 @@ function Case() {
     const updateRatingMutation = useMutation({
       mutationFn: ({ queryId, documentId, rating }: { queryId: string; documentId: string; rating: number }) =>
         RatingsService.updateUserRating({
+          caseId: case_obj.case_id,
           queryId: queryId,
           documentId: documentId,
           requestBody: {
-            query_id: queryId,
-            document_id: documentId,
             user_rating: rating
           }
         }),
@@ -198,6 +197,7 @@ function Case() {
               <UploadDatasetButton
                 caseId={id}
                 onUploadSuccess={handleUploadSuccess}
+                hasQueries={queries.length > 0}
               />
             </div>
           </div>
@@ -205,20 +205,36 @@ function Case() {
 
         <div className="page-content flex-1 overflow-y-auto px-6 py-2">
           {/* Queries List */}
-          <div className="space-y-2">
-            {queries.map(query => (
-              <QueryCard
-                key={query.query_id}
-                query={query}
-                titleField={titleField}
-                maxRating={maxRating}
-                onToggle={() => toggleQuery(query.query_id)}
-                onRatingChange={(docId, newRating) => updateRating(query.query_id, docId, newRating)}
-                updatingRatings={updatingRatings}
-                getRatingKey={(docId) => getRatingKey(query.query_id, docId)}
-              />
-            ))}
-          </div>
+          {queries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+              <div className="max-w-md">
+                <h3 className="text-lg font-semibold mb-2">No queries available</h3>
+                <p className="text-muted-foreground mb-4">
+                  Please load a dataset to start evaluating queries and rating documents.
+                </p>
+                <UploadDatasetButton
+                  caseId={id}
+                  onUploadSuccess={handleUploadSuccess}
+                  hasQueries={false}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {queries.map(query => (
+                <QueryCard
+                  key={query.query_id}
+                  query={query}
+                  titleField={titleField}
+                  maxRating={maxRating}
+                  onToggle={() => toggleQuery(query.query_id)}
+                  onRatingChange={(docId, newRating) => updateRating(query.query_id, docId, newRating)}
+                  updatingRatings={updatingRatings}
+                  getRatingKey={(docId) => getRatingKey(query.query_id, docId)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     )

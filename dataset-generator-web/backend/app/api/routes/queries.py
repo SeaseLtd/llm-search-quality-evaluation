@@ -6,7 +6,7 @@ from sqlmodel import func, select
 from sqlalchemy.orm import selectinload
 
 import app
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, ValidatedCaseDep
 from app.api.models.query import QueryPublic, QueryCreate
 from app.models import Rating
 from app.models.query import Query
@@ -21,8 +21,7 @@ def read_queries(
     session: SessionDep,
     current_user: CurrentUser,
     case_id: uuid.UUID | None = None,
-    add_documents: bool = False,
-    limit: int = 100
+    add_documents: bool = False
 ) -> list[QueryPublic]:
     """
     Retrieve queries. Optionally filter by case_id.
@@ -31,7 +30,6 @@ def read_queries(
     statement = (
         select(Query)
         .join(Case)
-        .limit(limit)
     )
 
     if case_id:
@@ -66,63 +64,51 @@ def read_queries(
     ]
 
 
-@router.get("/{id}", response_model=QueryPublic)
-def read_query(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+@router.get("/{case_id}/{query_id}", response_model=QueryPublic)
+def read_query(
+    session: SessionDep,
+    validated_case: ValidatedCaseDep,
+    query_id: str
+) -> Any:
     """
-    Get query by ID.
+    Get query by composite key (query_id, case_id).
     """
-    query = session.get(Query, id)
+    query = session.get(Query, (query_id, validated_case.case_id))
     if not query:
         raise HTTPException(status_code=404, detail="Query not found")
-
-    # Check permissions via the case
-    case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
 
     return query
 
 
-@router.post("/", response_model=QueryPublic)
+@router.post("/{case_id}/", response_model=QueryPublic)
 def create_query(
-    *, session: SessionDep, current_user: CurrentUser, query_in: QueryCreate, case_id: uuid.UUID
+    *, session: SessionDep, validated_case: ValidatedCaseDep, query_in: QueryCreate
 ) -> Any:
     """
     Create new query.
     """
-    # Verify the user has access to this case
-    case = session.get(Case, case_id)
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-
-    query = Query.model_validate(query_in, update={"case_id": case_id})
+    query = Query.model_validate(query_in, update={"case_id": validated_case.case_id})
     session.add(query)
     session.commit()
     session.refresh(query)
     return query
 
 
-@router.put("/{id}", response_model=QueryPublic)
+@router.put("/{case_id}/{query_id}", response_model=QueryPublic)
 def update_query(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    validated_case: ValidatedCaseDep,
+    query_id: str,
     query_in: QueryCreate,
 ) -> Any:
     """
     Update a query.
     """
-    query = session.get(Query, id)
+    query = session.get(Query, (query_id, validated_case.case_id))
     if not query:
         raise HTTPException(status_code=404, detail="Query not found")
 
-    # Check permissions via the case
-    case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
 
     update_dict = query_in.model_dump(exclude_unset=True)
     query.sqlmodel_update(update_dict)
@@ -132,21 +118,18 @@ def update_query(
     return query
 
 
-@router.delete("/{id}")
+@router.delete("/{case_id}/{query_id}")
 def delete_query(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    session: SessionDep,
+    validated_case: ValidatedCaseDep,
+    query_id: str
 ) -> Message:
     """
     Delete a query.
     """
-    query = session.get(Query, id)
+    query = session.get(Query, (query_id, validated_case.case_id))
     if not query:
         raise HTTPException(status_code=404, detail="Query not found")
-
-    # Check permissions via the case
-    case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
 
     session.delete(query)
     session.commit()

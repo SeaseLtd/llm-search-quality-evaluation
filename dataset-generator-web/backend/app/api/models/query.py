@@ -1,5 +1,6 @@
 import typing
 import uuid
+from sqlmodel import Field
 
 import app
 from app.api.models.rating import RatingDetailed
@@ -8,10 +9,11 @@ from app.models.query import QueryBase, Query
 
 # Properties to receive on query creation
 class QueryCreate(QueryBase):
-    pass
+    query_id: str = Field(default_factory=uuid.uuid4)
+
 
 class QueryPublic(QueryBase):
-    query_id: uuid.UUID
+    query_id: str
     case_id: uuid.UUID
     ratings: typing.Optional[list[RatingDetailed]]
 
@@ -25,5 +27,4 @@ class QueryPublic(QueryBase):
                 for rating in sorted(query.ratings, key=lambda r: r.position)
             ] if query.ratings else None,
         )
-        app.logger.info("Initialized QueryPublic with %d ratings", len(self.ratings) if self.ratings else 0)
 

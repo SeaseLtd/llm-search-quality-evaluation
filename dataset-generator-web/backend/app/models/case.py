@@ -31,3 +31,4 @@ class Case(CaseBase, table=True):
     )
     owner: User | None = Relationship(back_populates="cases")
     queries: list["Query"] = Relationship(back_populates="case", cascade_delete=True)
+    documents: list["Document"] = Relationship(back_populates="case", cascade_delete=True)

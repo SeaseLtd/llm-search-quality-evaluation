@@ -15,9 +15,10 @@ import { CasesService, type ApiError } from "@/client"
 interface UploadDatasetButtonProps {
   caseId: string
   onUploadSuccess: () => void
+  hasQueries?: boolean
 }
 
-export function UploadDatasetButton({ caseId, onUploadSuccess }: UploadDatasetButtonProps) {
+export function UploadDatasetButton({ caseId, onUploadSuccess, hasQueries = false }: UploadDatasetButtonProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [showProgressDialog, setShowProgressDialog] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -36,12 +37,22 @@ export function UploadDatasetButton({ caseId, onUploadSuccess }: UploadDatasetBu
     }
 
     setSelectedFile(file)
-    setShowConfirmDialog(true)
+
+    // Show confirmation dialog only if there are existing queries
+    if (hasQueries) {
+      setShowConfirmDialog(true)
+    } else {
+      // Upload directly if no queries exist - pass file directly
+      handleConfirmUpload(file)
+    }
   }
 
   // Handle upload confirmation
-  const handleConfirmUpload = async () => {
-    if (!selectedFile) return
+  const handleConfirmUpload = async (fileToUpload?: File) => {
+    // Use passed file parameter or fall back to selectedFile state
+    const file = fileToUpload || selectedFile
+
+    if (!file) return
 
     setShowConfirmDialog(false)
     setShowProgressDialog(true)
@@ -49,13 +60,13 @@ export function UploadDatasetButton({ caseId, onUploadSuccess }: UploadDatasetBu
     try {
       // Create FormData
       const formData = new FormData()
-      formData.append('file', selectedFile)
+      formData.append('file', file)
 
       // Call the API
       await CasesService.uploadDataset({
-        id: caseId,
+        caseId: caseId,
         formData: {
-          file: selectedFile
+          file: file
         }
       })
 
@@ -113,7 +124,7 @@ export function UploadDatasetButton({ caseId, onUploadSuccess }: UploadDatasetBu
             <Button variant="outline" onClick={handleCancelUpload}>
               Cancel
             </Button>
-            <Button variant="default" onClick={handleConfirmUpload}>
+            <Button variant="default" onClick={() => handleConfirmUpload(selectedFile || undefined)}>
               OK
             </Button>
           </DialogFooter>

@@ -58,14 +58,16 @@ export type CaseUpdate = {
 
 export type DocumentCreate = {
     fields?: {
-        [key: string]: (string);
+        [key: string]: unknown;
     };
+    document_id?: string;
 };
 
 export type DocumentPublic = {
     fields?: {
-        [key: string]: (string);
+        [key: string]: unknown;
     };
+    case_id: string;
     document_id: string;
 };
 
@@ -94,6 +96,7 @@ export type QueryCreate = {
     query: string;
     created_at?: string;
     updated_at?: string;
+    query_id?: string;
 };
 
 export type QueryPublic = {
@@ -109,6 +112,7 @@ export type RatingCreate = {
     llm_rating: (number | null);
     user_rating: (number | null);
     explanation?: (string | null);
+    case_id: string;
     query_id: string;
     document_id: string;
 };
@@ -152,8 +156,6 @@ export type UserPublic = {
 };
 
 export type UserRatingUpdate = {
-    query_id: string;
-    document_id: string;
     user_rating: number;
 };
 
@@ -191,11 +193,6 @@ export type ValidationError = {
     type: string;
 };
 
-export type CasesReadCasesData = {
-    limit?: number;
-    skip?: number;
-};
-
 export type CasesReadCasesResponse = (Array<CasePublic>);
 
 export type CasesCreateCaseData = {
@@ -205,62 +202,61 @@ export type CasesCreateCaseData = {
 export type CasesCreateCaseResponse = (CasePublic);
 
 export type CasesReadCaseData = {
-    id: string;
+    caseId: string;
 };
 
 export type CasesReadCaseResponse = (CaseDetailed);
 
 export type CasesUpdateCaseData = {
-    id: string;
+    caseId: string;
     requestBody: CaseUpdate;
 };
 
 export type CasesUpdateCaseResponse = (CasePublic);
 
 export type CasesDeleteCaseData = {
-    id: string;
+    caseId: string;
 };
 
 export type CasesDeleteCaseResponse = (Message);
 
 export type CasesUploadDatasetData = {
+    caseId: string;
     formData: Body_cases_upload_dataset;
-    id: string;
 };
 
 export type CasesUploadDatasetResponse = (CaseDetailed);
 
-export type DocumentsReadDocumentsData = {
-    limit?: number;
-    skip?: number;
-};
-
 export type DocumentsReadDocumentsResponse = (Array<DocumentPublic>);
 
-export type DocumentsCreateDocumentData = {
-    requestBody: DocumentCreate;
-};
-
-export type DocumentsCreateDocumentResponse = (DocumentPublic);
-
 export type DocumentsReadDocumentData = {
-    id: string;
+    caseId: string;
+    documentId: string;
 };
 
 export type DocumentsReadDocumentResponse = (DocumentPublic);
 
 export type DocumentsUpdateDocumentData = {
-    id: string;
+    caseId: string;
+    documentId: string;
     requestBody: DocumentCreate;
 };
 
 export type DocumentsUpdateDocumentResponse = (DocumentPublic);
 
 export type DocumentsDeleteDocumentData = {
-    id: string;
+    caseId: string;
+    documentId: string;
 };
 
 export type DocumentsDeleteDocumentResponse = (Message);
+
+export type DocumentsCreateDocumentData = {
+    caseId: string;
+    requestBody: DocumentCreate;
+};
+
+export type DocumentsCreateDocumentResponse = (DocumentPublic);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
@@ -297,10 +293,31 @@ export type PrivateCreateUserResponse = (UserPublic);
 export type QueriesReadQueriesData = {
     addDocuments?: boolean;
     caseId?: (string | null);
-    limit?: number;
 };
 
 export type QueriesReadQueriesResponse = (Array<QueryPublic>);
+
+export type QueriesReadQueryData = {
+    caseId: string;
+    queryId: string;
+};
+
+export type QueriesReadQueryResponse = (QueryPublic);
+
+export type QueriesUpdateQueryData = {
+    caseId: string;
+    queryId: string;
+    requestBody: QueryCreate;
+};
+
+export type QueriesUpdateQueryResponse = (QueryPublic);
+
+export type QueriesDeleteQueryData = {
+    caseId: string;
+    queryId: string;
+};
+
+export type QueriesDeleteQueryResponse = (Message);
 
 export type QueriesCreateQueryData = {
     caseId: string;
@@ -309,41 +326,15 @@ export type QueriesCreateQueryData = {
 
 export type QueriesCreateQueryResponse = (QueryPublic);
 
-export type QueriesReadQueryData = {
-    id: string;
-};
-
-export type QueriesReadQueryResponse = (QueryPublic);
-
-export type QueriesUpdateQueryData = {
-    id: string;
-    requestBody: QueryCreate;
-};
-
-export type QueriesUpdateQueryResponse = (QueryPublic);
-
-export type QueriesDeleteQueryData = {
-    id: string;
-};
-
-export type QueriesDeleteQueryResponse = (Message);
-
 export type RatingsReadRatingsData = {
     documentId?: (string | null);
-    limit?: number;
     queryId?: (string | null);
-    skip?: number;
 };
 
 export type RatingsReadRatingsResponse = (Array<RatingDetailed>);
 
-export type RatingsCreateRatingData = {
-    requestBody: RatingCreate;
-};
-
-export type RatingsCreateRatingResponse = (RatingDetailed);
-
 export type RatingsReadRatingData = {
+    caseId: string;
     documentId: string;
     queryId: string;
 };
@@ -351,6 +342,7 @@ export type RatingsReadRatingData = {
 export type RatingsReadRatingResponse = (RatingDetailed);
 
 export type RatingsUpdateUserRatingData = {
+    caseId: string;
     documentId: string;
     queryId: string;
     requestBody: UserRatingUpdate;
@@ -359,16 +351,19 @@ export type RatingsUpdateUserRatingData = {
 export type RatingsUpdateUserRatingResponse = (RatingDetailed);
 
 export type RatingsDeleteRatingData = {
+    caseId: string;
     documentId: string;
     queryId: string;
 };
 
 export type RatingsDeleteRatingResponse = (Message);
 
-export type UsersReadUsersData = {
-    limit?: number;
-    skip?: number;
+export type RatingsCreateRatingData = {
+    caseId: string;
+    requestBody: RatingCreate;
 };
+
+export type RatingsCreateRatingResponse = (RatingDetailed);
 
 export type UsersReadUsersResponse = (UsersPublic);
 

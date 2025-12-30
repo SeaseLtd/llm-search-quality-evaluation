@@ -14,4 +14,4 @@ def create_random_case(db: Session) -> Case:
     title = random_lower_string()
     description = random_lower_string()
     case_in = CaseCreate(title=title, description=description)
-    return crud.create_case(session=db, case_in=case_in, owner_id=owner_id)
+    return crud.create_case(session=db, case=case_in, owner_id=owner_id)

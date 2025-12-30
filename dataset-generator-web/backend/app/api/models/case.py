@@ -1,6 +1,6 @@
 import uuid
 
-from app.api.models.query import QueryPublic
+from app.api.models.query import QueryPublic, QueryCreate
 from app.models.case import CaseBase, Case
 from pydantic import Field, BaseModel
 from typing import Any
@@ -16,7 +16,7 @@ class CaseUpdate(CaseBase):
     title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
 
 
-# Properties to return via API, id is always required
+# Properties to return via API, case_id is always required
 class CasePublic(CaseBase):
     case_id: uuid.UUID
     owner_id: uuid.UUID
@@ -41,7 +41,7 @@ class CaseDetailed(CasePublic):
 
 # Properties for uploading dataset
 class CaseUploadDataset(BaseModel):
-    queries: list[dict[str, Any]]
+    queries: list[QueryCreate]
     documents: list[dict[str, Any]]
     ratings: list[dict[str, Any]]
     max_rating_value: int

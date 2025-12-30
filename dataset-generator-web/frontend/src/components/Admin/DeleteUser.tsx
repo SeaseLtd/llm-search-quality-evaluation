@@ -20,18 +20,18 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 interface DeleteUserProps {
-  id: string
+  user_id: string
   onSuccess: () => void
 }
 
-const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
+const DeleteUser = ({ user_id, onSuccess }: DeleteUserProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
-  const deleteUser = async (id: string) => {
-    await UsersService.deleteUser({ userId: id })
+  const deleteUser = async (user_id: string) => {
+    await UsersService.deleteUser({ userId: user_id })
   }
 
   const mutation = useMutation({
@@ -48,7 +48,7 @@ const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
   })
 
   const onSubmit = async () => {
-    mutation.mutate(id)
+    mutation.mutate(user_id)
   }
 
   return (

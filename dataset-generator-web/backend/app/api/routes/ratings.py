@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, ValidatedCaseDep
 from app.api.models.rating import RatingDetailed, RatingCreate, UserRatingUpdate
 from app.models.rating import Rating
 from app.models.query import Query
@@ -19,10 +19,8 @@ router = APIRouter(prefix="/ratings", tags=["ratings"])
 def read_ratings(
     session: SessionDep,
     current_user: CurrentUser,
-    query_id: uuid.UUID | None = None,
-    document_id: uuid.UUID | None = None,
-    skip: int = 0,
-    limit: int = 100
+    query_id: str | None = None,
+    document_id: str | None = None
 ) -> list[RatingDetailed]:
     """
     Retrieve ratings. Optionally filter by query_id or document_id.
@@ -56,109 +54,74 @@ def read_ratings(
             .join(Case)
             .where(Case.owner_id == current_user.user_id)
         )
-    ratings = session.exec(statement.offset(skip).limit(limit)).all()
+    ratings = session.exec(statement).all()
     return ratings
 
 
-@router.get("/{query_id}/{document_id}", response_model=RatingDetailed)
+@router.get("/{case_id}/{query_id}/{document_id}", response_model=RatingDetailed)
 def read_rating(
     session: SessionDep,
-    current_user: CurrentUser,
-    query_id: uuid.UUID,
-    document_id: uuid.UUID
+    validated_case: ValidatedCaseDep,
+    query_id: str,
+    document_id: str
 ) -> RatingDetailed:
     """
-    Get rating by query_id and document_id.
+    Get rating by composite key (case_id, query_id, document_id).
     """
-    rating = session.exec(
-        select(Rating).where(
-            Rating.query_id == query_id,
-            Rating.document_id == document_id
-        )
-    ).first()
-
+    rating = session.get(Rating, (validated_case.case_id, query_id, document_id))
     if not rating:
         raise HTTPException(status_code=404, detail="Rating not found")
 
-    # Check permissions via the query's case
-    query = session.get(Query, query_id)
-    if query:
-        case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-            raise HTTPException(status_code=400, detail="Not enough permissions")
 
     return rating
 
 
-@router.post("/", response_model=RatingDetailed)
+@router.post("/{case_id}/", response_model=RatingDetailed)
 def create_rating(
-    *, session: SessionDep, current_user: CurrentUser, rating_in: RatingCreate
+    *, session: SessionDep, validated_case: ValidatedCaseDep, rating_in: RatingCreate
 ) -> Any:
     """
     Create new rating.
     """
-    # Verify query exists and user has permission
-    query = session.get(Query, rating_in.query_id)
+    # Verify query exists
+    query = session.get(Query, (rating_in.query_id, validated_case.case_id))
     if not query:
         raise HTTPException(status_code=404, detail="Query not found")
 
-    case = session.get(Case, query.case_id)
-    if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-
     # Verify document exists
-    document = session.get(Document, rating_in.document_id)
+    document = session.get(Document, (rating_in.document_id, validated_case.case_id))
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Check if rating already exists
-    existing_rating = session.exec(
-        select(Rating).where(
-            Rating.query_id == rating_in.query_id,
-            Rating.document_id == rating_in.document_id
-        )
-    ).first()
-
+    existing_rating = session.get(Rating, (validated_case.case_id, rating_in.query_id, rating_in.document_id))
     if existing_rating:
         raise HTTPException(status_code=400, detail="Rating already exists for this query-document pair")
 
-    rating = Rating.model_validate(rating_in)
+    rating = Rating.model_validate(rating_in, update={"case_id": validated_case.case_id})
     session.add(rating)
     session.commit()
     session.refresh(rating)
     return rating
 
 
-@router.put("/{query_id}/{document_id}", response_model=RatingDetailed)
+@router.put("/{case_id}/{query_id}/{document_id}", response_model=RatingDetailed)
 def update_user_rating(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    query_id: uuid.UUID,
-    document_id: uuid.UUID,
+    validated_case: ValidatedCaseDep,
+    query_id: str,
+    document_id: str,
     rating_in: UserRatingUpdate,
 ) -> Any:
     """
     Update a rating.
     """
-    rating = session.exec(
-        select(Rating).where(
-            Rating.query_id == query_id,
-            Rating.document_id == document_id
-        )
-    ).one_or_none()
-
+    rating = session.get(Rating, (validated_case.case_id, query_id, document_id))
     if not rating:
         raise HTTPException(status_code=404, detail="Rating not found")
 
-    # Check permissions via the query's case
-    query = session.get(Query, query_id)
-    if query:
-        case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-            raise HTTPException(status_code=400, detail="Not enough permissions")
-
-    update_dict = rating_in.model_dump(exclude_unset=True, exclude={"query_id", "document_id"})
+    update_dict = rating_in.model_dump(exclude_unset=True, exclude={"case_id", "query_id", "document_id"})
     rating.sqlmodel_update(update_dict)
     session.add(rating)
     session.commit()
@@ -166,32 +129,20 @@ def update_user_rating(
     return rating
 
 
-@router.delete("/{query_id}/{document_id}")
+@router.delete("/{case_id}/{query_id}/{document_id}")
 def delete_rating(
     session: SessionDep,
-    current_user: CurrentUser,
-    query_id: uuid.UUID,
-    document_id: uuid.UUID
+    validated_case: ValidatedCaseDep,
+    query_id: str,
+    document_id: str
 ) -> Message:
     """
     Delete a rating.
     """
-    rating = session.exec(
-        select(Rating).where(
-            Rating.query_id == query_id,
-            Rating.document_id == document_id
-        )
-    ).first()
-
+    rating = session.get(Rating, (validated_case.case_id, query_id, document_id))
     if not rating:
         raise HTTPException(status_code=404, detail="Rating not found")
 
-    # Check permissions via the query's case
-    query = session.get(Query, query_id)
-    if query:
-        case = session.get(Case, query.case_id)
-        if not current_user.is_superuser and (case.owner_id != current_user.user_id):
-            raise HTTPException(status_code=400, detail="Not enough permissions")
 
     session.delete(rating)
     session.commit()

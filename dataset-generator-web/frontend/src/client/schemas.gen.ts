@@ -306,12 +306,14 @@ export const CaseUpdateSchema = {
 export const DocumentCreateSchema = {
     properties: {
         fields: {
-            additionalProperties: {
-                type: 'string'
-            },
+            additionalProperties: true,
             type: 'object',
             title: 'Fields',
             default: {}
+        },
+        document_id: {
+            type: 'string',
+            title: 'Document Id'
         }
     },
     type: 'object',
@@ -321,21 +323,23 @@ export const DocumentCreateSchema = {
 export const DocumentPublicSchema = {
     properties: {
         fields: {
-            additionalProperties: {
-                type: 'string'
-            },
+            additionalProperties: true,
             type: 'object',
             title: 'Fields',
             default: {}
         },
-        document_id: {
+        case_id: {
             type: 'string',
             format: 'uuid',
+            title: 'Case Id'
+        },
+        document_id: {
+            type: 'string',
             title: 'Document Id'
         }
     },
     type: 'object',
-    required: ['document_id'],
+    required: ['case_id', 'document_id'],
     title: 'DocumentPublic'
 } as const;
 
@@ -443,6 +447,10 @@ export const QueryCreateSchema = {
             type: 'string',
             format: 'date-time',
             title: 'Updated At'
+        },
+        query_id: {
+            type: 'string',
+            title: 'Query Id'
         }
     },
     type: 'object',
@@ -470,7 +478,6 @@ export const QueryPublicSchema = {
         },
         query_id: {
             type: 'string',
-            format: 'uuid',
             title: 'Query Id'
         },
         case_id: {
@@ -536,19 +543,22 @@ export const RatingCreateSchema = {
             ],
             title: 'Explanation'
         },
-        query_id: {
+        case_id: {
             type: 'string',
             format: 'uuid',
+            title: 'Case Id'
+        },
+        query_id: {
+            type: 'string',
             title: 'Query Id'
         },
         document_id: {
             type: 'string',
-            format: 'uuid',
             title: 'Document Id'
         }
     },
     type: 'object',
-    required: ['llm_rating', 'user_rating', 'query_id', 'document_id'],
+    required: ['llm_rating', 'user_rating', 'case_id', 'query_id', 'document_id'],
     title: 'RatingCreate'
 } as const;
 
@@ -737,16 +747,6 @@ export const UserPublicSchema = {
 
 export const UserRatingUpdateSchema = {
     properties: {
-        query_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Query Id'
-        },
-        document_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Document Id'
-        },
         user_rating: {
             type: 'integer',
             minimum: 0,
@@ -755,7 +755,7 @@ export const UserRatingUpdateSchema = {
         }
     },
     type: 'object',
-    required: ['query_id', 'document_id', 'user_rating'],
+    required: ['user_rating'],
     title: 'UserRatingUpdate'
 } as const;
 

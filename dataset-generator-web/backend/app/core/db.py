@@ -1,4 +1,5 @@
 import random
+import uuid
 
 from sqlmodel import Session, create_engine, select, SQLModel
 
@@ -38,82 +39,49 @@ def init_db(session: Session) -> None:
         )
         user = crud.create_user(session=session, user_create=user_in)
         app.logger.info(f"Created user: {user.email}")
+        session.commit()
 
     # Create a default case if it doesn't exist
     case = session.exec(
         select(Case).where(Case.owner_id == user.user_id)
     ).first()
     if not case:
-        case_in = CaseCreate(
-            title="Default Case",
+        case_id = uuid.uuid4()
+        case = Case(
+            case_id=case_id,
+            title="Sample Case",
             description="Default case for initial data",
             max_rating_value=5,
-            document_title_field_name="title"
+            document_title_field_name="title",
+            owner_id=user.user_id,
+            queries=[
+                Query(
+                    case_id=case_id,
+                    query_id=f"query_{query_index}",
+                    query=f"Sample query {query_index}",
+                    ratings=[
+                        Rating(
+                            position=idx,
+                            llm_rating=random.randint(1, 5),
+                            document=Document(
+                                case_id=case_id,
+                                query_id=f"query_{query_index}",
+                                document_id=f"q_{query_index}_doc_{idx}",
+                                fields={
+                                    "title": f"Document {idx}",
+                                    "content": f"This is the content of document {idx}",
+                                    "category": f"Category {(idx % 3) + 1}"
+                                }
+                            )
+                        )
+                        for idx in range(1, 10)
+                    ]
+                )
+                for query_index in range(1, 10)
+            ]
         )
-        case = crud.create_case(session=session, case_in=case_in, owner_id=user.user_id)
+        session.add(case)
+        session.commit()
         app.logger.info(f"Created case: {case.title}")
 
-    # Create 5 queries if they don't exist
-    existing_queries = session.exec(
-        select(Query).where(Query.case_id == case.case_id)
-    ).all()
-
-    if len(existing_queries) < 5:
-        queries_to_create = 5 - len(existing_queries)
-        for i in range(len(existing_queries) + 1, len(existing_queries) + queries_to_create + 1):
-            query = Query(
-                query=f"Sample query {i}",
-                case_id=case.case_id
-            )
-            session.add(query)
-            app.logger.info(f"Created query: {query.query}")
-        session.commit()
-
-    # Get all queries for the case
-    queries = session.exec(
-        select(Query).where(Query.case_id == case.case_id)
-    ).all()
-
-    # Create 10 documents if they don't exist
-    existing_documents_count = session.exec(select(Document)).all()
-    if len(existing_documents_count) < 10:
-        documents_to_create = 10 - len(existing_documents_count)
-        for i in range(len(existing_documents_count) + 1, len(existing_documents_count) + documents_to_create + 1):
-            document = Document(
-                fields={
-                    "title": f"Document {i}",
-                    "content": f"This is the content of document {i}",
-                    "category": f"Category {(i % 3) + 1}"
-                }
-            )
-            session.add(document)
-            app.logger.info(f"Created document: Document {i}")
-        session.commit()
-
-    # Get all documents
-    documents = session.exec(select(Document)).all()
-
-    # Create ratings for each query-document pair if they don't exist
-    for query in queries:
-        current_position = 0
-        for document in documents:
-            existing_rating = session.exec(
-                select(Rating).where(
-                    Rating.query_id == query.query_id,
-                    Rating.document_id == document.document_id
-                )
-            ).first()
-
-            if not existing_rating:
-                rating = Rating(
-                    query_id=query.query_id,
-                    document_id=document.document_id,
-                    position=(current_position := current_position + 1),
-                    user_rating=random.randint(0, case.max_rating_value) if random.randint(0,1) == 0 else None,
-                    llm_rating=(hash(str(query.query_id) + str(document.document_id)) % 5) + 1,  # Random rating 1-5
-                    explanation=f"Auto-generated rating from query {query.query_id} and document {document.document_id}" if random.randint(0,1) == 0 else None
-                )
-                session.add(rating)
-
     session.commit()
-    app.logger.info(f"Created ratings for {len(queries)} queries and {len(documents)} documents")
