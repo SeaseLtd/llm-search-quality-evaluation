@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CasesReadCasesData, CasesReadCasesResponse, CasesCreateCaseData, CasesCreateCaseResponse, CasesReadCaseData, CasesReadCaseResponse, CasesUpdateCaseData, CasesUpdateCaseResponse, CasesDeleteCaseData, CasesDeleteCaseResponse, DocumentsReadDocumentsData, DocumentsReadDocumentsResponse, DocumentsCreateDocumentData, DocumentsCreateDocumentResponse, DocumentsReadDocumentData, DocumentsReadDocumentResponse, DocumentsUpdateDocumentData, DocumentsUpdateDocumentResponse, DocumentsDeleteDocumentData, DocumentsDeleteDocumentResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, QueriesReadQueriesData, QueriesReadQueriesResponse, QueriesCreateQueryData, QueriesCreateQueryResponse, QueriesReadQueryData, QueriesReadQueryResponse, QueriesUpdateQueryData, QueriesUpdateQueryResponse, QueriesDeleteQueryData, QueriesDeleteQueryResponse, RatingsReadRatingsData, RatingsReadRatingsResponse, RatingsCreateRatingData, RatingsCreateRatingResponse, RatingsReadRatingData, RatingsReadRatingResponse, RatingsUpdateUserRatingData, RatingsUpdateUserRatingResponse, RatingsDeleteRatingData, RatingsDeleteRatingResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CasesReadCasesData, CasesReadCasesResponse, CasesCreateCaseData, CasesCreateCaseResponse, CasesReadCaseData, CasesReadCaseResponse, CasesUpdateCaseData, CasesUpdateCaseResponse, CasesDeleteCaseData, CasesDeleteCaseResponse, CasesUploadDatasetData, CasesUploadDatasetResponse, DocumentsReadDocumentsData, DocumentsReadDocumentsResponse, DocumentsCreateDocumentData, DocumentsCreateDocumentResponse, DocumentsReadDocumentData, DocumentsReadDocumentResponse, DocumentsUpdateDocumentData, DocumentsUpdateDocumentResponse, DocumentsDeleteDocumentData, DocumentsDeleteDocumentResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, QueriesReadQueriesData, QueriesReadQueriesResponse, QueriesCreateQueryData, QueriesCreateQueryResponse, QueriesReadQueryData, QueriesReadQueryResponse, QueriesUpdateQueryData, QueriesUpdateQueryResponse, QueriesDeleteQueryData, QueriesDeleteQueryResponse, RatingsReadRatingsData, RatingsReadRatingsResponse, RatingsCreateRatingData, RatingsCreateRatingResponse, RatingsReadRatingData, RatingsReadRatingResponse, RatingsUpdateUserRatingData, RatingsUpdateUserRatingResponse, RatingsDeleteRatingData, RatingsDeleteRatingResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class CasesService {
     /**
@@ -109,6 +109,31 @@ export class CasesService {
             path: {
                 id: data.id
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Upload Dataset
+     * Upload a dataset file (JSON or GZ) to a case.
+     * This operation will replace all existing queries, documents, and ratings.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.formData
+     * @returns CaseDetailed Successful Response
+     * @throws ApiError
+     */
+    public static uploadDataset(data: CasesUploadDatasetData): CancelablePromise<CasesUploadDatasetResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/cases/{id}/upload_dataset',
+            path: {
+                id: data.id
+            },
+            formData: data.formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 422: 'Validation Error'
             }

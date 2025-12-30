@@ -2,7 +2,8 @@ import uuid
 
 from app.api.models.query import QueryPublic
 from app.models.case import CaseBase, Case
-from pydantic import Field
+from pydantic import Field, BaseModel
+from typing import Any
 
 
 # Properties to receive on case creation
@@ -36,4 +37,12 @@ class CaseDetailed(CasePublic):
             owner_id=case.owner_id,
             queries=[QueryPublic(query) for query in sorted(case.queries, key=lambda q: q.created_at)],
         )
+
+
+# Properties for uploading dataset
+class CaseUploadDataset(BaseModel):
+    queries: list[dict[str, Any]]
+    documents: list[dict[str, Any]]
+    ratings: list[dict[str, Any]]
+    max_rating_value: int
 

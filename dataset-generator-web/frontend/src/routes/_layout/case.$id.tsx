@@ -1,8 +1,9 @@
 import {createFileRoute} from "@tanstack/react-router"
 import {CasesService, QueryPublic, RatingDetailed, RatingsService, type ApiError} from "@/client";
-import {useSuspenseQuery, useMutation} from "@tanstack/react-query";
+import {useSuspenseQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useState} from "react";
 import QueryCard from "@/components/Case/QueryCard";
+import { UploadDatasetButton } from "@/components/Case/UploadDatasetButton";
 import useCustomToast from "@/hooks/useCustomToast";
 import {handleError} from "@/utils";
 
@@ -35,6 +36,7 @@ function Case() {
     const { id } = Route.useParams()
     const { data: case_obj } = useSuspenseQuery(getCaseDetailsQueryOptions(id))
     const { showErrorToast } = useCustomToast()
+    const queryClient = useQueryClient()
 
     const maxRating = case_obj.max_rating_value ?? 2;
     const titleField = case_obj.document_title_field_name ?? 'title';
@@ -172,12 +174,31 @@ function Case() {
     };
 
 
+    // Handle successful upload - refresh case data
+    const handleUploadSuccess = async () => {
+      // Invalidate and refetch the case details
+      await queryClient.invalidateQueries({ queryKey: ["case_details", id] })
+      const freshData = await queryClient.fetchQuery(getCaseDetailsQueryOptions(id))
+
+      // Update local state with fresh data
+      if (freshData.queries) {
+        setQueries(freshData.queries.map(q => ({ ...q, expanded: false })))
+      }
+    }
+
+
     return (
       <div className="flex flex-col h-full">
         <header className="shrink-0 border-b px-6 py-2 bg-background">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{case_obj.title}</h1>
+            </div>
+            <div>
+              <UploadDatasetButton
+                caseId={id}
+                onUploadSuccess={handleUploadSuccess}
+              />
             </div>
           </div>
         </header>
