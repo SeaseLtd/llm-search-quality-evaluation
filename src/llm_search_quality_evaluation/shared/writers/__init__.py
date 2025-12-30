@@ -4,6 +4,7 @@ from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWri
 from llm_search_quality_evaluation.shared.writers.rre_writer import RreWriter
 from llm_search_quality_evaluation.shared.writers.mteb_writer import MtebWriter
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 
 __all__ = [
     "WriterFactory",
@@ -11,5 +12,6 @@ __all__ = [
     "QuepidWriter",
     "RreWriter",
     "MtebWriter",
-    "WriterConfig"
+    "WriterConfig",
+    "OutputFormat"
 ]

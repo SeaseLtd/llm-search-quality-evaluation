@@ -6,6 +6,7 @@ import jsonlines
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.models import Document
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWriter
 from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import EmbeddingWriter
 from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import TASKS_NAME_MAPPING
@@ -146,7 +147,7 @@ def test_writer_with_special_chars__expects__correctly_handles_specials(tmp_path
 
     # Using QuepidWriter as a representative example
     # TODO: expand tests to the rest of the writers
-    writer_cfg = WriterConfig(output_format="quepid", index="test")
+    writer_cfg = WriterConfig(output_format=OutputFormat.QUEPID, index="test")
     writer = QuepidWriter(writer_cfg)
     writer.write(tmp_path, ds)
 
