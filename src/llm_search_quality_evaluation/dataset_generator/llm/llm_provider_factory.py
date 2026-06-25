@@ -8,6 +8,7 @@ with lazy initialization for the 2 currently supported LLMs - openai and gemini.
 
 import logging
 import os
+import threading
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -65,13 +66,21 @@ class LazyLLM:
     def __init__(self, config: LLMConfig):
         self.config = config
         self._llm: Optional[BaseChatModel] = None
+        # Guards first-use initialization of `_llm`. The shared LazyLLM is created once in
+        # main() (single-threaded), but its `llm` property can be touched concurrently when
+        # scoring/query-gen run through a ThreadPoolExecutor (llm_max_workers > 1). Without
+        # the lock the first batch of workers can each see `_llm is None` and build the model
+        # redundantly. Double-checked locking keeps the lazy behavior and builds exactly once.
+        self._lock = threading.Lock()
 
     @property
     def llm(self) -> BaseChatModel:
         if self._llm is None:
-            log.info("Initializing LLM for the first time: provider=%s, model=%s",
-                    self.config.name, self.config.model)
-            self._llm = LLMServiceFactory.build(self.config)
+            with self._lock:
+                if self._llm is None:
+                    log.info("Initializing LLM for the first time: provider=%s, model=%s",
+                            self.config.name, self.config.model)
+                    self._llm = LLMServiceFactory.build(self.config)
         return self._llm
 
     def __getattr__(self, name):  # type: ignore[no-untyped-def]
