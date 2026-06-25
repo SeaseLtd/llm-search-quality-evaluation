@@ -1,3 +1,7 @@
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 from pydantic_core import ValidationError
 
@@ -60,3 +64,53 @@ def test_llm_factory_lazy_openai__expected__api_key_not_valid(example_doc, query
     service: LLMService = LLMService(chat_model=llm)
     with pytest.raises(ValueError):
         _ = service.generate_score(example_doc, query, relevance_scale='binary')
+
+
+def test_lazy_llm_builds_model_once_under_concurrency(monkeypatch):
+    """Concurrent first-use of LazyLLM.llm must build the underlying model exactly once.
+
+    The PR runs scoring / query-gen through a ThreadPoolExecutor when llm_max_workers > 1.
+    Without the double-checked lock in LazyLLM.llm, racing workers could each see
+    `_llm is None` and call LLMServiceFactory.build redundantly. This asserts a single build.
+    """
+    cfg = LLMConfig(
+        name="openai",
+        model="mock_model",
+        max_tokens=1024,
+        api_key_env="mock_api_key",
+    )
+
+    build_calls = 0
+    build_calls_lock = threading.Lock()
+
+    class _DummyModel:
+        def with_structured_output(self, *_args, **_kwargs):
+            return self
+
+    def fake_build(config):
+        nonlocal build_calls
+        with build_calls_lock:
+            build_calls += 1
+        # Widen the race window so a missing lock would be caught reliably.
+        time.sleep(0.01)
+        return _DummyModel()
+
+    monkeypatch.setattr(LLMServiceFactory, "build", staticmethod(fake_build))
+    # Isolate from the class-level cache: construct LazyLLM directly so this test's result
+    # cannot be influenced by (or leak into) LLMServiceFactory._cached_lazy_llm.
+    monkeypatch.setattr(LLMServiceFactory, "_cached_lazy_llm", None, raising=False)
+
+    lazy = LazyLLM(cfg)
+
+    n_workers = 16
+    barrier = threading.Barrier(n_workers)
+
+    def worker():
+        barrier.wait()  # release all threads together to maximize the race
+        return lazy.with_structured_output(object)
+
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        results = [f.result() for f in [executor.submit(worker) for _ in range(n_workers)]]
+
+    assert build_calls == 1
+    assert all(r is not None for r in results)

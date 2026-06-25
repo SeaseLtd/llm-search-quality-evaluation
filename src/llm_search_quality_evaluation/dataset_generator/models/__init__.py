@@ -1,10 +1,21 @@
 from llm_search_quality_evaluation.dataset_generator.models.query_response import LLMQueryResponse
 from llm_search_quality_evaluation.dataset_generator.models.score_response import LLMScoreResponse
-from llm_search_quality_evaluation.dataset_generator.models.score_schema import BinaryScore, GradedScore
+from llm_search_quality_evaluation.dataset_generator.models.score_schema import (
+    BinaryBatchItem,
+    BinaryBatchScore,
+    BinaryScore,
+    GradedBatchItem,
+    GradedBatchScore,
+    GradedScore,
+)
 
 __all__ = [
     "LLMQueryResponse",
     "LLMScoreResponse",
     "GradedScore",
     "BinaryScore",
+    "BinaryBatchItem",
+    "BinaryBatchScore",
+    "GradedBatchItem",
+    "GradedBatchScore",
 ]
