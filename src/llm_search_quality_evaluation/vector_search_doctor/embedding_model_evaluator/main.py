@@ -22,10 +22,9 @@ import importlib
 
 import mteb
 from mteb.models.cache_wrapper import CachedEmbeddingWrapper
-from packaging.version import Version as _Version, InvalidVersion as _InvalidVersion
-
-_mteb_task_results = importlib.import_module("mteb.load_results.task_results")
 from mteb.overview import TASKS_REGISTRY
+from packaging.version import InvalidVersion as _InvalidVersion
+from packaging.version import Version as _Version
 
 from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import Config
 from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks import (  # noqa: F401 (tasks must be imported to register)
@@ -146,6 +145,8 @@ def compute_mteb_leaderboard_comparison(model_name: str, task_type: str) -> dict
     # Some result files in the public MTEB repo have non-PEP440 mteb_version strings (e.g. '2.16.2-2.18.0')
     # that crash packaging.version.Version. We patch Version in the MTEB module to treat unparseable
     # versions as a recent release, so the file is loaded without special legacy handling.
+    _mteb_task_results = importlib.import_module("mteb.load_results.task_results")
+
     class _SafeVersion(_Version):
         def __init__(self, version: str) -> None:
             try:
