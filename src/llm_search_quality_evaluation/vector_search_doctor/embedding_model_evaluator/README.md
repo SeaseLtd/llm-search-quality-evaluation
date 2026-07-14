@@ -19,46 +19,11 @@ uv sync
 uv sync --extra dev
 ```
 
-### Generate an MTEB Dataset in IR Task Format
-
-```bash
-cd src/vector_search_doctor/embedding_model_evaluator
-
-# Generate an MTEB dataset in IR task format
-uv run scripts/mteb_retrieval_dataset_generator.py --dataset "nfcorpus" --split "test"
-
-# Expected default output: ./resources/mteb_datasets/nfcorpus/test/
-```
-
-> **Note:** The *nfcorpus* dataset is related to an Information Retrieval task.
-> Therefore, we must set `task_to_evaluate: "retrieval"` in the configuration file.
-
 ### Run the Exact Search Evaluator with a YAML Config
 
 ```bash
 uv run embedding_model_evaluator --config <path-to-config-yaml>
 ```
-
----
-
-## `mteb_retrieval_dataset_generator` CLI Parameters - IR dataset
-
-**Required**
-
-* `--dataset`: MTEB dataset name (e.g. `"scifact"`)
-* `--split`: Dataset split to export (default `"test"`, others: `"train"`, `"dev"`)
-
-**Optional**
-
-* `--out-root`: Output directory (default `resources/mteb_datasets`)
-* `--overwrite`: Overwrite existing outputs (default `False`)
-* `--max-docs`: Maximum number of documents to export (0 = no limit)
-* `--max-queries`: Maximum number of queries to export (0 = no limit)
-* `--negatives-per-query`: Number of random negatives per query (0 = disabled)
-* `--seed`: Random seed (default 42)
-
-> **Note:** by default the qrels.json of IR dataset **does not** include negative samples -> if we want to include them 
-> (simple negative-mining), we need to use the `--negatives-per-query` parameter.
 
 ---
 
