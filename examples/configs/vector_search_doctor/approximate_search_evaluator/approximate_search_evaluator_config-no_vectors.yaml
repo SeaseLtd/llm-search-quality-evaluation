@@ -2,6 +2,8 @@ query_template: "templates/template_solr.json"
 search_engine_type: "solr"
 collection_name: "testcore"
 search_engine_url: "http://localhost:8983/solr/"
-search_engine_version: "8.3.0"
-ratings_path: "resources/ratings.json"
+evaluation_dataset_path: "resources/evaluation_dataset.json.gz"
 output_destination: "resources"
+# doc_fields: ["title", "body"]   # fields to request from the engine (default: [])
+# top_k: 10                       # number of top results per query (default: 10)
+# metrics: ["ndcg@10", "map@10", "mrr@10"]  # ranx metrics (default: ndcg@10, map@10, mrr@10, precision@10, recall@10)

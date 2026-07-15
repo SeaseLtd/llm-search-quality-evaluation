@@ -1,5 +1,5 @@
-query_template: "tests/resources/template_elasticsearch.json"
-search_engine_type: "elasticsearch"
+query_template: "tests/resources/template_opensearch.json"
+search_engine_type: "opensearch"
 collection_name: "testcore"
 search_engine_url: "http://localhost:9200/"
 evaluation_dataset_path: "tests/resources/approximate_search_evaluator/evaluation_dataset.json.gz"
