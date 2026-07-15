@@ -20,11 +20,11 @@ def build_run(
 
     run: dict[str, dict[str, int]] = {}
     for spec in query_specs:
-        # spec.extra_placeholders is ignored here; Task 04 will pass them through.
         docs = search_engine.fetch_for_evaluation(
             query_template=query_template,
             doc_fields=doc_fields,
             keyword=spec.text,
+            extra_placeholders=spec.extra_placeholders or None,
         )
         docs = docs[:top_k]
         log.debug("Query %r: retrieved %d doc(s).", spec.text, len(docs))

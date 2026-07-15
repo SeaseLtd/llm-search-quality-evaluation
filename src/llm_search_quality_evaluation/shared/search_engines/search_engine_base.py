@@ -60,13 +60,15 @@ class BaseSearchEngine(ABC):
             start += NUMBER_OF_DOCS_EACH_FETCH
 
 
-    def _parse_query_template(self, path: Path | str) -> Dict[str, Any]:
-        """Return the payload"""
+    def _parse_query_template(self, path: Path | str, extra_placeholders: Dict[str, str] | None = None) -> Dict[str, Any]:
+        """Return the payload, applying extra_placeholders verbatim before JSON parsing."""
         path = Path(path)
         try:
             with path.open() as f:
-                data: Dict[str, Any] = json.load(f)
-                return data
+                text = f.read()
+            text = self._apply_extra_placeholders(text, extra_placeholders)
+            data: Dict[str, Any] = json.loads(text)
+            return data
         except JSONDecodeError as e:
             raise ValueError(f"Invalid JSON query_template: {e}")
 
@@ -98,10 +100,19 @@ class BaseSearchEngine(ABC):
     def fetch_for_evaluation(self,
                              query_template: Path | str,
                              doc_fields: List[str],
-                             keyword: str="*:*") \
+                             keyword: str="*:*",
+                             extra_placeholders: Dict[str, str] | None = None) \
             -> List[Document]:
         """Search for documents based on a keyword and a query template to evaluate the system."""
         pass
+
+    def _apply_extra_placeholders(self, text: str, extra_placeholders: Dict[str, str] | None) -> str:
+        """Substitute extra_placeholders verbatim in raw template text before JSON parsing."""
+        if not extra_placeholders:
+            return text
+        for placeholder, value in extra_placeholders.items():
+            text = text.replace(placeholder, value)
+        return text
 
     @abstractmethod
     def _search(self, payload: Dict[str, Any]) -> List[Document]:

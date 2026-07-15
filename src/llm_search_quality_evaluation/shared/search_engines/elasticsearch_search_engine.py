@@ -95,7 +95,7 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
 
         return self._search(payload)
 
-    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: Optional[str] = None) -> List[Document]:
+    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: Optional[str] = None, extra_placeholders: Dict[str, str] | None = None) -> List[Document]:
         """
         Executes a search for evaluation using a query template with an optional keyword substitution.
 
@@ -111,7 +111,7 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
         log.info("Fetching documents (size) based on query template for query evaluation")
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template)
+        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
         payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, keyword)
 
         fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]

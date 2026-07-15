@@ -169,7 +169,8 @@ class VespaSearchEngine(BaseSearchEngine):
         self,
         query_template: Path | str,
         doc_fields: Optional[List[str]],
-        keyword: str = "*"
+        keyword: str = "*",
+        extra_placeholders: Dict[str, str] | None = None,
     ) -> List[Document]:
         """
         Fetch documents from Vespa using a provided YQL template file and keyword.
@@ -190,6 +191,8 @@ class VespaSearchEngine(BaseSearchEngine):
             template_str = query_template.read_text(encoding='utf-8').strip()
         else:
             template_str = query_template.strip()
+
+        template_str = self._apply_extra_placeholders(template_str, extra_placeholders)
 
         # Use parameter substitution instead of string replacement for security
         # Template should contain userInput(@kw) with {allowEmpty:true} for empty queries

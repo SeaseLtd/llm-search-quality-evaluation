@@ -124,3 +124,71 @@ def test_elasticsearch_search_engine_negative_post_fetch_for_evaluation__expects
 def test_elasticsearch_search_engine_bad_url__expects__raises_validation_error():
     with pytest.raises(ValidationError):
         _ = ElasticsearchSearchEngine("fake-NONurl")
+
+
+# --- extra_placeholders tests ---
+
+def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects__json_array(monkeypatch, tmp_path):
+    """Unquoted $vector in template -> parsed payload has a real JSON array."""
+    template = tmp_path / "knn.json"
+    template.write_text('{"knn": {"field": "vec", "query_vector": $vector}}')
+
+    engine = ElasticsearchSearchEngine("https://fakeurl")
+
+    captured = {}
+    def fake_search(payload):
+        captured["payload"] = payload
+        return []
+    monkeypatch.setattr(engine, "_search", fake_search)
+
+    engine.fetch_for_evaluation(
+        query_template=template,
+        doc_fields=["title"],
+        keyword="cats",
+        extra_placeholders={"$vector": "[1.0, 2.0]"},
+    )
+    assert captured["payload"]["knn"]["query_vector"] == [1.0, 2.0]
+
+
+def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__string(monkeypatch, tmp_path):
+    """Quoted $vector in template -> parsed payload has a string value."""
+    template = tmp_path / "knn.json"
+    template.write_text('{"q": "$vector"}')
+
+    engine = ElasticsearchSearchEngine("https://fakeurl")
+
+    captured = {}
+    def fake_search(payload):
+        captured["payload"] = payload
+        return []
+    monkeypatch.setattr(engine, "_search", fake_search)
+
+    engine.fetch_for_evaluation(
+        query_template=template,
+        doc_fields=["title"],
+        keyword=None,
+        extra_placeholders={"$vector": "[1.0, 2.0]"},
+    )
+    assert captured["payload"]["q"] == "[1.0, 2.0]"
+    assert isinstance(captured["payload"]["q"], str)
+
+
+def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects__no_change(monkeypatch, tmp_path):
+    """Omitting extra_placeholders leaves existing behavior unchanged."""
+    template = tmp_path / "simple.json"
+    template.write_text('{"query": {"match": {"title": "$query"}}}')
+
+    engine = ElasticsearchSearchEngine("https://fakeurl")
+
+    captured = {}
+    def fake_search(payload):
+        captured["payload"] = payload
+        return []
+    monkeypatch.setattr(engine, "_search", fake_search)
+
+    engine.fetch_for_evaluation(
+        query_template=template,
+        doc_fields=["title"],
+        keyword="cats",
+    )
+    assert captured["payload"]["query"]["match"]["title"] == "cats"
