@@ -6,6 +6,7 @@ import pytest
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.models import Document
+from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
 from llm_search_quality_evaluation.shared.writers.evaluation_dataset_writer import (
     OUTPUT_FILENAME,
     EvaluationDatasetWriter,
@@ -163,6 +164,37 @@ class TestEvaluationDatasetWriter:
 
         assert data["max_rating_value"] == 2
         assert len(data["ratings"]) == 3
+
+    def test_load_round_trip(
+        self,
+        writer_config: WriterConfig,
+        populated_datastore: DataStore,
+        tmp_path: Path,
+    ):
+        """Write a dataset and load it back; all fields must match the source."""
+        writer = EvaluationDatasetWriter(writer_config=writer_config)
+        writer.write(tmp_path, populated_datastore)
+
+        output_file = tmp_path / OUTPUT_FILENAME
+        loaded = EvaluationDataset.load(output_file)
+
+        original_queries = populated_datastore.get_queries()
+        assert len(loaded.queries) == len(original_queries)
+        assert {q.id for q in loaded.queries} == {q.id for q in original_queries}
+        assert {q.text for q in loaded.queries} == {q.text for q in original_queries}
+
+        original_docs = populated_datastore.get_documents()
+        assert len(loaded.documents) == len(original_docs)
+        assert {d.id for d in loaded.documents} == {d.id for d in original_docs}
+
+        original_ratings = populated_datastore.get_ratings()
+        assert len(loaded.ratings) == len(original_ratings)
+        loaded_keys = {(r.query_id, r.doc_id, r.score) for r in loaded.ratings}
+        original_keys = {(r.query_id, r.doc_id, r.score) for r in original_ratings}
+        assert loaded_keys == original_keys
+
+        max_score = max((r.score for r in original_ratings), default=1)
+        assert loaded.max_rating_value == max_score
 
     def test_write_with_only_queries_no_ratings(
         self, writer_config: WriterConfig, tmp_path: Path
