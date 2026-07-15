@@ -11,7 +11,7 @@ RESULTS_FILENAME = "evaluation_results.json"
 
 def write_results(
     result: EvaluationResult,
-    run: dict[str, dict[str, float]],
+    run: dict[str, dict[str, int]],
     qrels: dict[str, dict[str, int]],
     meta: EvaluationMeta,
     output_destination: Path,
