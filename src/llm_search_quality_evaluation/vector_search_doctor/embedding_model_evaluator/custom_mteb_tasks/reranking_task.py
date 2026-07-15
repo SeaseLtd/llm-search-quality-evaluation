@@ -67,7 +67,7 @@ class CustomRerankingTask(AbsTaskReranking):
     metadata = TaskMetadata(
         name="CustomRerankingTask",
         description="Custom Reranking Task.",
-        reference="https://github.com/SeaseLtd/rated-ranking-evaluator/rre-embeddings",
+        reference="https://github.com/SeaseLtd/llm-search-quality-evaluation",
         type="Reranking",
         category="s2p",
         eval_splits=["test"],
@@ -75,9 +75,9 @@ class CustomRerankingTask(AbsTaskReranking):
         main_score="map",
         dataset={
             "name": "data",
-            "path": "rre-embeddings/resources/",
+            "path": "llm-search-quality-evaluation/resources/",
             "revision": "v1",
-            "url": "https://github.com/SeaseLtd/rated-ranking-evaluator/rre-embeddings/resources/",
+            "url": "https://github.com/SeaseLtd/llm-search-quality-evaluation",
         },
     )
 

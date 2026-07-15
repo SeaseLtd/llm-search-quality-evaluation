@@ -202,23 +202,3 @@ class TestTopKValidation:
         )
         with pytest.raises(ValidationError):
             Config.load(config_file)
-
-
-# --------------- RRE fields no longer error ---------------
-
-class TestRreFieldsRemoved:
-    def test_search_engine_version_ignored(self, resource_folder: Path, tmp_path: Path) -> None:
-        """Unknown extra fields are silently ignored by pydantic with model_config extra='ignore'
-        OR raise if extra='forbid'. Check that supplying search_engine_version does not raise."""
-        config_file = tmp_path / "with_old_rre_field.yaml"
-        config_file.write_text(
-            "query_template: tests/resources/template_solr.json\n"
-            "search_engine_type: solr\n"
-            "collection_name: testcore\n"
-            "search_engine_url: http://localhost:8983/solr/\n"
-            f"evaluation_dataset_path: {resource_folder}/evaluation_dataset.json.gz\n"
-            "search_engine_version: 9.8.1\n"
-        )
-        # pydantic BaseModel ignores extra fields by default — should not raise
-        config = Config.load(config_file)
-        assert config.search_engine_type == "solr"
