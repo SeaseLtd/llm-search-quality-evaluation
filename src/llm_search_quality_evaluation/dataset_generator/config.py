@@ -32,7 +32,7 @@ class Config(BaseModel):
     llm_configuration_file: FilePath = Field(..., description="Path to the LLM configuration file.")
     max_query_terms: Optional[int] = Field(None, gt=0, description="Max number of query terms in the LLM-generated "
                                                                    "query")
-    output_format: Literal['quepid', 'rre', 'mteb']
+    output_format: Literal['quepid', 'rre', 'mteb', 'evaluation_dataset']
     output_destination: Path = Field(..., description="Path to save the output dataset.")
     save_llm_explanation: bool = False
     llm_explanation_destination: Optional[Path] = Field(None, description="Path to save the LLM rating explanation")
