@@ -61,7 +61,7 @@ llm_configuration_file: "examples/configs/dataset_generator/llm_config.yaml"
 max_query_terms: 5
 
 # Output format for the generated dataset
-# Accepted values: quepid, rre, mteb
+# Accepted values: quepid, rre, mteb, evaluation_dataset
 output_format: "quepid"
 
 # For rre output format, you need other fields, e.g.:
