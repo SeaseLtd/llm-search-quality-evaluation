@@ -22,7 +22,8 @@ dependencies = [
     "pyyaml>=6.0.2",
     "python-dotenv>=1.1.1",
     "jsonlines>=4.0.0",
-    "mteb>=0.1.0"
+    "mteb>=0.1.0",
+    "ranx>=0.3.21"
 ]
 
 # mypy/ruff/pytest
