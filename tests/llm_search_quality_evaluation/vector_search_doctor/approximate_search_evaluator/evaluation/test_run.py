@@ -65,6 +65,7 @@ class TestBuildRun:
             query_template=TEMPLATE,
             doc_fields=DOC_FIELDS,
             keyword="test query",
+            extra_placeholders=None,
         )
 
     def test_multiple_queries(self) -> None:
