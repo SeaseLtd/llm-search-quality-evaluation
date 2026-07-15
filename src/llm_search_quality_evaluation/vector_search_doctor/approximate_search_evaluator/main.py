@@ -122,7 +122,7 @@ def main() -> None:
     if eval_folder.is_dir():
         shutil.rmtree(eval_folder)
 
-    setup_rre(eval_folder, config.search_engine_type, config.search_engine_version)
+    setup_rre(eval_folder, config.search_engine_type, config.search_engine_version)  # type: ignore[attr-defined]
 
     if rre_resources_folder.exists() and rre_resources_folder.is_dir():
         shutil.rmtree(rre_resources_folder)
@@ -134,21 +134,21 @@ def main() -> None:
     for version in ["v1.0", "v1.1"]:  # if we use just one version, it breaks :)
         conf_sets_version_folder = conf_sets_folder / version
         conf_sets_version_folder.mkdir(parents=True, exist_ok=True)
-        with open(conf_sets_version_folder / config.conf_sets_filename, "w", encoding="utf-8") as f:
+        with open(conf_sets_version_folder / config.conf_sets_filename, "w", encoding="utf-8") as f:  # type: ignore[attr-defined]
             to_dump = {
-                config.search_engine_url_alias: [config.search_engine_url.encoded_string()],
-                config.collection_name_alias: config.collection_name
+                config.search_engine_url_alias: [config.search_engine_url.encoded_string()],  # type: ignore[attr-defined]
+                config.collection_name_alias: config.collection_name  # type: ignore[attr-defined]
             }
             json.dump(to_dump, f, indent=2, ensure_ascii=False)
 
     log.debug("Initializing DataStore")
     data_store = DataStore()
 
-    if config.ratings_path is not None:
+    if config.ratings_path is not None:  # type: ignore[attr-defined]
         log.debug("Using the existing ratings file...")
         ratings_folder.mkdir(parents=True, exist_ok=True)
-        shutil.copy(config.ratings_path, ratings_folder / "ratings.json")
-        ratings_file = config.ratings_path
+        shutil.copy(config.ratings_path, ratings_folder / "ratings.json")  # type: ignore[attr-defined]
+        ratings_file = config.ratings_path  # type: ignore[attr-defined]
     else:
         log.debug("Writing initial ratings file with RreWriter...")
         writer = RreWriter(
