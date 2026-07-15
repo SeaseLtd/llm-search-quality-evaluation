@@ -24,8 +24,9 @@ tasks based on custom datasets.
 
 #### [Approximate Search Evaluator](src/llm_search_quality_evaluation/vector_search_doctor/approximate_search_evaluator/README.md)
 
-This sub-tool provides a flexible tool to deply RRE and extract metrics to test your search engine collection given a 
-[template](https://github.com/SeaseLtd/rated-ranking-evaluator/wiki/What%20We%20Need%20To%20Provide#query-templates).
+This sub-tool evaluates a search engine collection using IR metrics (nDCG, MAP, MRR, Precision, Recall)
+computed in-process via ranx. Input is an `evaluation_dataset.json.gz` produced by the Dataset Generator
+(`output_format: evaluation_dataset`). Supports Solr, Elasticsearch, and OpenSearch.
 
 ## Quickstart: tools installation
 
