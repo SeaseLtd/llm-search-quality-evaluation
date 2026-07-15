@@ -1,6 +1,21 @@
 from pydantic import BaseModel, Field
 
 
+class SearchEngineMeta(BaseModel):
+    type: str
+    endpoint: str
+
+
+class EvaluationMeta(BaseModel):
+    """Self-describing header for an evaluation run (built by the orchestrator, Task 07)."""
+
+    search_engine: SearchEngineMeta
+    query_template: str
+    top_k: int
+    max_rating_value: int
+    relevance_threshold: int
+
+
 class EvaluationResult(BaseModel):
     """Outcome of an evaluation run, keyed by query text."""
 
