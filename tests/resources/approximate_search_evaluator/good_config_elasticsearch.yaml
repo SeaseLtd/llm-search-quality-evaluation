@@ -5,7 +5,7 @@ search_engine_url: "http://localhost:9200/"
 id_field: "new_id"
 query_placeholder: "$query_placeholder"
 evaluation_dataset_path: "tests/resources/approximate_search_evaluator/evaluation_dataset.json.gz"
-embeddings_folder: "tests/resources/approximate_search_evaluator/embeddings"
+embeddings_file: "tests/resources/approximate_search_evaluator/queries_embeddings.jsonl"
 output_destination: "elastic_resources"
 doc_fields: ["title"]
 top_k: 10

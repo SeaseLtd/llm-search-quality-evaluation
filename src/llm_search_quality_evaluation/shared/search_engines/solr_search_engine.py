@@ -22,7 +22,7 @@ class SolrSearchEngine(BaseSearchEngine):
 
     def __init__(self, endpoint: HttpUrl):
         super().__init__(endpoint)
-        self.HEADERS = {'Content-Type': 'application/json'}
+        self.HEADERS = {'Accept': 'application/json'}
         log.debug(f"Working on endpoint: {self.endpoint}")
         self.UNIQUE_KEY = requests.get(urljoin(self.endpoint.encoded_string(), 'schema/uniquekey')).json()['uniqueKey']
         log.debug(f"uniqueKey found: {self.UNIQUE_KEY}")
@@ -48,7 +48,7 @@ class SolrSearchEngine(BaseSearchEngine):
         log.debug(f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
-            response = requests.get(search_url, headers=self.HEADERS, params=payload)
+            response = requests.post(search_url, headers=self.HEADERS, data=payload)
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException, HTTPError) as e:
             log.error(f"Solr query failed: {e}\n")
@@ -117,7 +117,7 @@ class SolrSearchEngine(BaseSearchEngine):
 
     def _search(self, payload: Dict[str, Any]) -> List[Document]:
         """
-        Executes a Solr search using a JSON payload and parses the results.
+        Executes a Solr search using a POST body and parses the results.
 
         Args:
             payload (Dict[str, Any]): The JSON payload to send in the POST request to Solr.
@@ -134,7 +134,8 @@ class SolrSearchEngine(BaseSearchEngine):
         log.debug(f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
-            response = requests.get(search_url, headers=self.HEADERS, params=payload)
+            # POST keeps large vector queries out of the URL and avoids 414 errors.
+            response = requests.post(search_url, headers=self.HEADERS, data=payload)
             log.debug(f"URL: {response.request.url}")
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException, HTTPError) as e:

@@ -7,6 +7,7 @@ import pytest
 from llm_search_quality_evaluation.shared.models import Query
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.embeddings import (
     attach_vectors,
+    ensure_placeholder_values,
     load_query_vectors,
 )
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.models import (
@@ -88,3 +89,18 @@ class TestAttachVectors:
         specs = [QuerySpec(text="q")]
         result = attach_vectors(specs, {})
         assert result[0].extra_placeholders == {}
+
+
+class TestEnsurePlaceholderValues:
+    def test_accepts_when_all_queries_have_placeholder(self) -> None:
+        specs = [QuerySpec(text="q1", extra_placeholders={"$vector": "[0.1]"})]
+        ensure_placeholder_values(specs)
+
+    def test_raises_with_missing_queries(self) -> None:
+        specs = [
+            QuerySpec(text="q1", extra_placeholders={"$vector": "[0.1]"}),
+            QuerySpec(text="q2"),
+            QuerySpec(text="q3"),
+        ]
+        with pytest.raises(ValueError, match=r"Missing \$vector values for 2 query\(s\): 'q2', 'q3'"):
+            ensure_placeholder_values(specs)

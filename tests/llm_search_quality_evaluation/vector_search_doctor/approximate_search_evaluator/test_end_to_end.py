@@ -98,7 +98,7 @@ def _make_config(tmp_path: Path, dataset_path: Path, output_path: Path, engine_t
         search_engine_type=engine_type,
         search_engine_collection_endpoint=f"http://localhost:8983/{engine_type}/testcore/",
         evaluation_dataset_path=dataset_path,
-        embeddings_folder=None,
+        embeddings_file=None,
         query_template=query_template,
         doc_fields=[],
         top_k=2,

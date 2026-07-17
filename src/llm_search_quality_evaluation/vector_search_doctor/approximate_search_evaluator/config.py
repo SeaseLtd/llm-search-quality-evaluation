@@ -33,9 +33,9 @@ class Config(BaseModel):
         ...,
         description="Path to the evaluation_dataset.json.gz file.",
     )
-    embeddings_folder: Optional[Path] = Field(
+    embeddings_file: Optional[FilePath] = Field(
         None,
-        description="Folder containing precomputed query embeddings (JSONL). Required for vector queries.",
+        description="Path to the precomputed query embeddings JSONL file. Required for vector queries.",
     )
     output_destination: Path = Field(
         Path("resources"),

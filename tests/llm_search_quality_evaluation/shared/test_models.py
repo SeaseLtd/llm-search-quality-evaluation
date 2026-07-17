@@ -9,9 +9,10 @@ def test_document_ok__expects__returns_id_and_field_value():
     assert d.id == "x"
     assert d.fields["k"] == 1
 
-def test_document_empty_fields__expects__raises_value_error():
-    with pytest.raises(ValueError):
-        Document(id="x", fields={})
+def test_document_empty_fields__expects__allowed_for_id_only_workflows():
+    d = Document(id="x", fields={})
+    assert d.id == "x"
+    assert d.fields == {}
 
 def test_document_empty_key__expects__raises_value_error():
     with pytest.raises(ValueError):
@@ -77,5 +78,4 @@ def test_query_auto_generates_id__expects__non_empty_string():
 def test_rating_non_negative_scores__expects__ok(score):
     r = Rating(doc_id="d", query_id="q", score=score)
     assert r.score == score
-
 
