@@ -45,3 +45,22 @@ def attach_vectors(
         else:
             updated.append(spec)
     return updated
+
+
+def ensure_placeholder_values(
+    query_specs: list[QuerySpec],
+    placeholder: str = "$vector",
+) -> None:
+    """Raise if any query is missing a required placeholder value."""
+
+    missing = [
+        spec.text for spec in query_specs if placeholder not in spec.extra_placeholders
+    ]
+    if not missing:
+        return
+
+    preview = ", ".join(repr(text) for text in missing[:5])
+    suffix = " ..." if len(missing) > 5 else ""
+    raise ValueError(
+        f"Missing {placeholder} values for {len(missing)} query(s): {preview}{suffix}"
+    )

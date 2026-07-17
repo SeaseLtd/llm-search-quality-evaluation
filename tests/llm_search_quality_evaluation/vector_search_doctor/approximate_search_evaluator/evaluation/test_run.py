@@ -25,6 +25,12 @@ def _docs(*ids: str) -> list[Document]:
 
 
 class TestBuildRun:
+    def test_id_only_documents_are_supported(self) -> None:
+        engine = _engine([Document(id="d1", fields={})])
+        specs = [QuerySpec(text="q")]
+        result = build_run(engine, TEMPLATE, specs, [], top_k=10)
+        assert result["q"] == {"d1": 10}
+
     def test_run_keyed_by_query_text(self) -> None:
         engine = _engine(_docs("d1", "d2"))
         specs = [QuerySpec(text="my query")]

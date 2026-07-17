@@ -25,8 +25,8 @@ class TestSolrConfig:
         assert config.evaluation_dataset_path == Path(
             "tests/resources/approximate_search_evaluator/evaluation_dataset.json.gz"
         )
-        assert config.embeddings_folder == Path(
-            "tests/resources/approximate_search_evaluator/embeddings"
+        assert config.embeddings_file == Path(
+            "tests/resources/approximate_search_evaluator/queries_embeddings.jsonl"
         )
         assert config.output_destination == Path("solr_resources")
         assert config.doc_fields == ["title", "body"]
@@ -38,7 +38,7 @@ class TestSolrConfig:
 
         assert config.id_field == "id"
         assert config.query_placeholder == "$query"
-        assert config.embeddings_folder is None
+        assert config.embeddings_file is None
         assert config.output_destination == Path("resources")
         assert config.doc_fields == []
         assert config.top_k == 10

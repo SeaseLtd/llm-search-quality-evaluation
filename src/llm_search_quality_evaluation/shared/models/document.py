@@ -34,9 +34,7 @@ class Document(BaseModel):
     @field_validator('fields')
     @classmethod
     def validate_fields(cls, field_values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate that the fields dictionary and its keys are not empty and that all values are JSON-serializable."""
-        if not field_values:
-            raise ValueError('The fields dictionary cannot be empty.')
+        """Validate field keys and values; empty dicts are allowed for id-only retrieval."""
         if any(not key for key in field_values.keys()):
             raise ValueError('Field keys cannot be empty strings.')
 

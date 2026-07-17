@@ -14,6 +14,7 @@ from llm_search_quality_evaluation.shared.search_engines import SearchEngineFact
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.config import Config
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.embeddings import (
     attach_vectors,
+    ensure_placeholder_values,
     load_query_vectors,
 )
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.metrics import (
@@ -35,6 +36,7 @@ from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evalu
 )
 
 log = logging.getLogger(__name__)
+VECTOR_PLACEHOLDER = "$vector"
 
 
 def _parse_args() -> argparse.Namespace:
@@ -73,15 +75,21 @@ def main() -> None:
         log.error("No queries found in the evaluation dataset. Aborting.")
         sys.exit(1)
 
-    if config.embeddings_folder is not None:
-        vectors = load_query_vectors(
-            config.embeddings_folder / "queries_embeddings.jsonl", dataset.queries
-        )
+    if config.embeddings_file is not None:
+        vectors = load_query_vectors(config.embeddings_file, dataset.queries)
         eval_input.query_specs = attach_vectors(eval_input.query_specs, vectors)
+    elif VECTOR_PLACEHOLDER in config.query_template.read_text():
+        raise ValueError(
+            f"Query template {config.query_template} requires {VECTOR_PLACEHOLDER}, "
+            "but embeddings_file is not set."
+        )
     else:
         log.warning(
-            "No embeddings_folder set; '$vector' placeholders (if any) won't be filled."
+            "No embeddings_file set; '$vector' placeholders (if any) won't be filled."
         )
+
+    if VECTOR_PLACEHOLDER in config.query_template.read_text():
+        ensure_placeholder_values(eval_input.query_specs, VECTOR_PLACEHOLDER)
 
     run = build_run(
         search_engine, config.query_template, eval_input.query_specs, config.doc_fields, config.top_k
@@ -101,7 +109,12 @@ def main() -> None:
         relevance_threshold=threshold,
     )
     out_path = write_results(result, run, eval_input.qrels, meta, config.output_destination)
-    log.info("Evaluation finished. Results at %s", out_path)
+
+    col_width = max(len(m) for m in result.aggregate) + 2
+    metrics_lines = "\n".join(
+        f"  {m:<{col_width}}{v:.3f}" for m, v in result.aggregate.items()
+    )
+    log.info(f"Evaluation completed.\n\nMetrics:\n{metrics_lines}\n\nResults written to:\n  {out_path}")
 
 
 if __name__ == "__main__":
