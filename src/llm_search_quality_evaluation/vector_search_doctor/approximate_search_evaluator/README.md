@@ -33,7 +33,7 @@ Create a config YAML file (or modify the
 | `doc_fields` | `[]` | Document fields to request from the engine |
 | `top_k` | `10` | Number of top results per query fed to the metrics |
 | `metrics` | `["ndcg@10", "map@10", "mrr@10", "precision@10", "recall@10"]` | ranx metric names |
-| `embeddings_folder` | `None` | Folder containing `queries_embeddings.jsonl` (required for vector queries) |
+| `embeddings_file` | `None` | Path to a `queries_embeddings.jsonl` file with precomputed query embeddings (required for vector queries) |
 | `output_destination` | `"resources"` | Directory where `evaluation_results.json` is written |
 
 > **Relevance threshold is derived, not configured.** It is computed as

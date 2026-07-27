@@ -122,6 +122,17 @@ class TestEvaluateMetrics:
         result = evaluate_metrics(qrels, run, metrics, relevance_threshold=1)
         assert result.metrics == metrics
 
+    def test_per_query_values_assigned_to_correct_query(self) -> None:
+        # q_b and q_c have a relevant doc in the run; q_a does not.
+        # Keys are intentionally in non-alphabetical insertion order (q_b, q_a, q_c)
+        # to verify that per-query results are not mis-assigned due to ordering assumptions.
+        qrels = {"q_b": {"d1": 1}, "q_a": {"d2": 1}, "q_c": {"d3": 1}}
+        run = {"q_b": {"d1": 10}, "q_a": {"d9": 10}, "q_c": {"d3": 10}}
+        result = evaluate_metrics(qrels, run, ["ndcg@10"], relevance_threshold=1)
+        assert result.per_query["q_b"]["ndcg@10"] == pytest.approx(1.0)
+        assert result.per_query["q_a"]["ndcg@10"] == pytest.approx(0.0)
+        assert result.per_query["q_c"]["ndcg@10"] == pytest.approx(1.0)
+
     def test_default_metrics_all_supported(self) -> None:
         for m in DEFAULT_METRICS:
             assert is_supported_metric(m), f"DEFAULT_METRICS entry '{m}' not supported"
