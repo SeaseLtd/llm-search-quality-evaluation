@@ -77,7 +77,7 @@ def evaluate_metrics(
     if not isinstance(per_query_raw, dict):
         per_query_raw = {metrics[0]: per_query_raw}
 
-    query_keys = list(qrels.keys())
+    query_keys = sorted(qrels.keys())
     per_query: dict[str, dict[str, float]] = {q: {} for q in query_keys}
     for metric_name, values in per_query_raw.items():
         for query_key, value in zip(query_keys, values):

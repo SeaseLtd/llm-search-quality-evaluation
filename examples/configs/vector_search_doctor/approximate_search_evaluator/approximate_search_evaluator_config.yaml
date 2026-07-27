@@ -1,4 +1,4 @@
-# Search engine type. Accepted values: solr, elasticsearch, opensearch, vespa
+# Search engine type. Accepted values: solr, elasticsearch, opensearch
 search_engine_type: "solr"
 
 # Search engine endpoint.
@@ -26,5 +26,5 @@ metrics: ["ndcg@10", "map@10", "mrr@10"]
 top_k: 10
 
 # Output folder for the evaluation report.
-output_dest: "resources/approximate_search_evaluation"
+output_destination: "resources/approximate_search_evaluation"
 
