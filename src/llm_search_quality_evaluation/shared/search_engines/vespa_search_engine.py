@@ -48,7 +48,7 @@ class VespaSearchEngine(BaseSearchEngine):
             'yql': f"select * from {self.schema}"
         }
 
-    def _get_total_hits(self, payload: Dict[str, Any]) -> int:
+    def _get_total_hits(self, payload: Dict[str, Any], collection: str| None = None) -> int:
         base = str(self.endpoint).rstrip("/")
         search_url = f"{base}/search/"
         log.debug(f"Search url: {search_url}")
@@ -136,6 +136,7 @@ class VespaSearchEngine(BaseSearchEngine):
         number_of_docs: int,
         doc_fields: Optional[List[str]],
         start: int  = 0,
+        collection: str| None = None
     ) -> List[Document]:
         """
         Fetch documents from Vespa for the purpose of query generation.
@@ -171,6 +172,7 @@ class VespaSearchEngine(BaseSearchEngine):
         doc_fields: Optional[List[str]],
         keyword: str = "*",
         extra_placeholders: Dict[str, str] | None = None,
+        collection: str| None = None
     ) -> List[Document]:
         """
         Fetch documents from Vespa using a provided YQL template file and keyword.

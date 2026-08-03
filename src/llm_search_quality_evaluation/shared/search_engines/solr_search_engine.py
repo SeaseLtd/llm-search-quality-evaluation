@@ -37,7 +37,7 @@ class SolrSearchEngine(BaseSearchEngine):
         fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
         return ','.join(fields)
 
-    def _get_total_hits(self, payload: Dict[str, Any]) -> int:
+    def _get_total_hits(self, payload: Dict[str, Any], collection: str| None = None) -> int:
         search_url = urljoin(self.endpoint.encoded_string(), 'select')
 
         # Force Solr to return a JSON formatted response
@@ -58,7 +58,7 @@ class SolrSearchEngine(BaseSearchEngine):
 
     def fetch_for_query_generation(self,
                                    documents_filter: Union[None, List[Dict[str, List[str]]]],
-                                   number_of_docs: int, doc_fields: List[str], start: int = 0) \
+                                   number_of_docs: int, doc_fields: List[str], start: int = 0, collection: str| None = None) \
             -> List[Document]:
         """
         Fetches a set of documents from Solr for the purpose of query generation.
@@ -94,7 +94,7 @@ class SolrSearchEngine(BaseSearchEngine):
 
         return self._search(payload)
 
-    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str="*:*", extra_placeholders: Dict[str, str] | None = None) -> List[Document]:
+    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str="*:*", extra_placeholders: Dict[str, str] | None = None, collection: str| None = None) -> List[Document]:
         """
         Executes a search using a query template for evaluation purposes.
 

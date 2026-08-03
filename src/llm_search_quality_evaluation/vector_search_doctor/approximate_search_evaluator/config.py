@@ -21,7 +21,7 @@ class Config(BaseModel):
         ...,
         description="Path to a query template file with a placeholder for keywords.",
     )
-    search_engine_type: Literal["solr", "elasticsearch", "opensearch"]
+    search_engine_type: Literal["solr", "elasticsearch", "opensearch", "datafari"]
     collection_name: str = Field(..., description="Name of the index/collection.")
     search_engine_url: HttpUrl = Field(..., description="Base search engine URL.")
     id_field: Optional[str] = Field(None, description="ID field for the unique key.")
@@ -57,9 +57,15 @@ class Config(BaseModel):
 
     @property
     def search_engine_collection_endpoint(self) -> HttpUrl:
-        """Base URL joined with the collection name."""
+        """Return the endpoint used by the search engine."""
+        if self.search_engine_type == "datafari":
+            return self.search_engine_url
+
         return HttpUrl(
-            urljoin(self.search_engine_url.encoded_string() + "/", self.collection_name + "/")
+            urljoin(
+                self.search_engine_url.encoded_string() + "/",
+                self.collection_name + "/"
+            )
         )
 
     @field_validator("metrics")

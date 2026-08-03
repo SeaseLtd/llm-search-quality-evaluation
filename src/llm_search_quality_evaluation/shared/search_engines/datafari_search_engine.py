@@ -58,7 +58,7 @@ class DatafariSearchEngine(BaseSearchEngine):
             response = requests.get(search_url, headers=self.HEADERS, params=payload)
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException, HTTPError) as e:
-            log.error(f"Solr query failed: {e}\n")
+            log.error(f"Datafari query failed: {e}\n")
             raise
 
         return int(response.json().get("response", {}).get("numFound", 0))
@@ -116,7 +116,8 @@ class DatafariSearchEngine(BaseSearchEngine):
         query_template: Path | str,
         doc_fields: List[str],
         keyword: str = "*:*",
-        collection: str | None = None,
+        collection: str | None = None, 
+        extra_placeholders: Dict[str, str] | None = None
     ) -> List[Document]:
         """
         Executes a search using a query template for evaluation purposes.
@@ -125,22 +126,18 @@ class DatafariSearchEngine(BaseSearchEngine):
             query_template (Path): Path variable pointing to the file with the payload a placeholder for the keyword.
             doc_fields (List[str]): List of fields to include in the response.
             keyword (str, optional): Keyword to inject into the query template. Defaults to "*:*".
-            collection (str, optional): The collection to search in. Defaults to "".
 
         Returns:
             List[Document]: A list of documents matching the query.
         """
-        log.debug(
-            "Fetching documents (rows) based on query template for query evaluation"
-        )
+        log.info("Fetching documents (rows) based on query template for query evaluation")
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template)
-        payload = self._replace_placeholder(
-            payload, self.QUERY_PLACEHOLDER, self.escape(keyword)
-        )
-        payload["fl"] = doc_fields
-        payload["collection"] = collection
+        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
+        payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, self.escape(keyword))
+        payload['fl'] = self._unify_fields(doc_fields)
+        payload['collection'] = collection
+
         return self._search(payload)
 
     def _search(
@@ -157,15 +154,15 @@ class DatafariSearchEngine(BaseSearchEngine):
             List[Document]: A list of documents formatted as `Document` instances.
         """
 
-        search_url = urljoin(self.endpoint.encoded_string(), "select")
-
+        #search_url = urljoin(self.endpoint.encoded_string(), "select")
+        search_url = self.endpoint.encoded_string().rstrip("/")
         if self.UNIQUE_KEY not in payload.get("fl", []):
             payload["fl"].append(self.UNIQUE_KEY)
 
         # Force Solr to return a JSON formatted response
         payload["wt"] = "json"
 
-        log.debug(f"Search url: {search_url}")
+        log.info(f"Search url: {search_url}")
         log.debug(
             f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
         )
@@ -175,7 +172,7 @@ class DatafariSearchEngine(BaseSearchEngine):
             log.info(f"URL: {response.request.url}")
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException, HTTPError) as e:
-            log.error(f"Solr query failed: {e}\n")
+            log.error(f"Datafari query failed: {e}\n")
             raise
 
         hits = response.json().get("response", {}).get("docs", [])
@@ -190,6 +187,10 @@ class DatafariSearchEngine(BaseSearchEngine):
             result.append(Document(id=doc_id, fields=fields))
         log.info(f"Fetched {len(result)} documents from the engine")
         return result
+    
+    def _unify_fields(self, doc_fields: List[str]) -> str:
+        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
+        return ','.join(fields)
 
     @staticmethod
     def _normalize(value: Any) -> List[str]:

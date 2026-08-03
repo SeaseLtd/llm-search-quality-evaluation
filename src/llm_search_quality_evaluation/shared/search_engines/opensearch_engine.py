@@ -24,7 +24,7 @@ class OpenSearchEngine(BaseSearchEngine):
         self.HEADERS = {'Content-Type': 'application/json'}
         self.UNIQUE_KEY = "id"
 
-    def _get_total_hits(self, payload: Dict[str, Any]) -> int:
+    def _get_total_hits(self, payload: Dict[str, Any], collection: str| None = None) -> int:
         search_url = f"{self.endpoint}/_search"
         log.debug(f"User-specified fields: {payload.get('_source')}")
         log.debug(f"Search url: {search_url}")
@@ -46,7 +46,7 @@ class OpenSearchEngine(BaseSearchEngine):
                                    documents_filter: Union[None, List[Dict[str, List[str]]]],
                                    number_of_docs: int,
                                    doc_fields: List[str],
-                                   start: int = 0) -> List[Document]:
+                                   start: int = 0, collection: str| None = None) -> List[Document]:
         """Fetches a list of documents for query generation based on optional filters."""
         log.info(f"Fetching {number_of_docs} documents (size) from the search engine for query generation")
 
@@ -82,7 +82,7 @@ class OpenSearchEngine(BaseSearchEngine):
 
         return self._search(payload)
 
-    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str = "*", extra_placeholders: Dict[str, str] | None = None) -> List[Document]:
+    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str = "*", extra_placeholders: Dict[str, str] | None = None, collection: str| None = None) -> List[Document]:
         """Fetches documents for evaluation by executing a query built from a template."""
 
         log.info("Fetching documents (size) based on query template for query evaluation")
