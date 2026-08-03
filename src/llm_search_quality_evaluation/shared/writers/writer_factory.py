@@ -1,4 +1,5 @@
 from llm_search_quality_evaluation.shared.writers.abstract_writer import AbstractWriter
+from llm_search_quality_evaluation.shared.writers.evaluation_dataset_writer import EvaluationDatasetWriter
 from llm_search_quality_evaluation.shared.writers.mteb_writer import MtebWriter
 from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWriter
 from llm_search_quality_evaluation.shared.writers.rre_writer import RreWriter
@@ -17,6 +18,7 @@ class WriterFactory:
         "quepid": QuepidWriter,
         "rre": RreWriter,
         "mteb": MtebWriter,
+        "evaluation_dataset": EvaluationDatasetWriter,
     }
 
     @classmethod

@@ -1,13 +1,3 @@
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.config import (
-    Config,
-)
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.constants import (
-    SOLR_SUPPORTED_VERSIONS,
-    ELASTICSEARCH_SUPPORTED_VERSIONS,
-)
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.config import Config
 
-__all__ = [
-    "Config",
-    "SOLR_SUPPORTED_VERSIONS",
-    "ELASTICSEARCH_SUPPORTED_VERSIONS",
-]
+__all__ = ["Config"]

@@ -2,9 +2,11 @@ query_template: "tests/resources/template_solr.json"
 search_engine_type: "solr"
 collection_name: "testcore"
 search_engine_url: "http://localhost:8983/solr/"
-search_engine_version: "9.8.1"
 id_field: "new_id"
 query_placeholder: "$query_placeholder"
-ratings_path: "tests/resources/approximate_search_evaluator/ratings.json"
-embeddings_folder: "tests/resources/approximate_search_evaluator/embeddings"
+evaluation_dataset_path: "tests/resources/approximate_search_evaluator/evaluation_dataset.json.gz"
+embeddings_file: "tests/resources/approximate_search_evaluator/queries_embeddings.jsonl"
 output_destination: "solr_resources"
+doc_fields: ["title", "body"]
+top_k: 20
+metrics: ["ndcg@10", "map@10"]

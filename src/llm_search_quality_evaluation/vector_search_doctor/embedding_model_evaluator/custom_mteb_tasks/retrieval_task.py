@@ -21,7 +21,7 @@ class CustomRetrievalTask(AbsTaskRetrieval):
     metadata = TaskMetadata(
         name="CustomRetrievalTask",
         description="Custom Retrieval Task.",
-        reference="https://github.com/SeaseLtd/rated-ranking-evaluator/rre-embeddings",
+        reference="https://github.com/SeaseLtd/llm-search-quality-evaluation",
         type="Retrieval",
         category="s2p",
         eval_splits=["test"],
@@ -35,9 +35,9 @@ class CustomRetrievalTask(AbsTaskRetrieval):
         sample_creation="created",
         dataset={
             "name": "data",
-            "path": "rre-embeddings/resources/",
+            "path": "llm-search-quality-evaluation/resources/",
             "revision": "v1",
-            "url": "https://github.com/SeaseLtd/rated-ranking-evaluator/rre-embeddings/resources/",
+            "url": "https://github.com/SeaseLtd/llm-search-quality-evaluation",
         },
     )
 
