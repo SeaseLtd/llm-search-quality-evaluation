@@ -30,30 +30,43 @@ def queries() -> list[Query]:
 
 
 class TestLoadQueryVectors:
-    def test_returns_text_to_vector_string(self, tmp_path: Path, queries: list[Query]) -> None:
+    def test_returns_text_to_vector_string(
+        self, tmp_path: Path, queries: list[Query]
+    ) -> None:
         emb_file = tmp_path / "queries_embeddings.jsonl"
-        _write_embeddings(emb_file, [
-            {"id": "q1", "vector": [0.1, 0.2, 0.3]},
-            {"id": "q2", "vector": [0.4, 0.5, 0.6]},
-        ])
+        _write_embeddings(
+            emb_file,
+            [
+                {"id": "q1", "vector": [0.1, 0.2, 0.3]},
+                {"id": "q2", "vector": [0.4, 0.5, 0.6]},
+            ],
+        )
         result = load_query_vectors(emb_file, queries)
         assert result["find cats"] == json.dumps([0.1, 0.2, 0.3])
         assert result["find dogs"] == json.dumps([0.4, 0.5, 0.6])
 
-    def test_vector_string_is_valid_json(self, tmp_path: Path, queries: list[Query]) -> None:
+    def test_vector_string_is_valid_json(
+        self, tmp_path: Path, queries: list[Query]
+    ) -> None:
         emb_file = tmp_path / "queries_embeddings.jsonl"
         _write_embeddings(emb_file, [{"id": "q1", "vector": [0.1, 0.2]}])
         result = load_query_vectors(emb_file, queries)
         parsed = json.loads(result["find cats"])
         assert parsed == [0.1, 0.2]
 
-    def test_unknown_query_id_skipped(self, tmp_path: Path, queries: list[Query], caplog: pytest.LogCaptureFixture) -> None:
+    def test_unknown_query_id_skipped(
+        self, tmp_path: Path, queries: list[Query], caplog: pytest.LogCaptureFixture
+    ) -> None:
         emb_file = tmp_path / "queries_embeddings.jsonl"
-        _write_embeddings(emb_file, [
-            {"id": "q1", "vector": [0.1]},
-            {"id": "ghost", "vector": [0.9]},
-        ])
+        _write_embeddings(
+            emb_file,
+            [
+                {"id": "q1", "vector": [0.1]},
+                {"id": "ghost", "vector": [0.9]},
+            ],
+        )
         import logging
+
         with caplog.at_level(logging.WARNING):
             result = load_query_vectors(emb_file, queries)
         assert "ghost" in caplog.text
@@ -102,5 +115,7 @@ class TestEnsurePlaceholderValues:
             QuerySpec(text="q2"),
             QuerySpec(text="q3"),
         ]
-        with pytest.raises(ValueError, match=r"Missing \$vector values for 2 query\(s\): 'q2', 'q3'"):
+        with pytest.raises(
+            ValueError, match=r"Missing \$vector values for 2 query\(s\): 'q2', 'q3'"
+        ):
             ensure_placeholder_values(specs)

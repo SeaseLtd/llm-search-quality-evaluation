@@ -24,7 +24,10 @@ def load_query_vectors(embeddings_file: Path, queries: list[Query]) -> dict[str,
             query_id = entry["id"]
             text = query_id_to_text.get(query_id)
             if text is None:
-                log.warning("Embedding entry references unknown query_id %r — skipping.", query_id)
+                log.warning(
+                    "Embedding entry references unknown query_id %r — skipping.",
+                    query_id,
+                )
                 continue
             result[text] = json.dumps(entry["vector"])
     return result
@@ -41,7 +44,9 @@ def attach_vectors(
         vector = text_to_vector.get(spec.text)
         if vector is not None:
             new_placeholders = {**spec.extra_placeholders, placeholder: vector}
-            updated.append(spec.model_copy(update={"extra_placeholders": new_placeholders}))
+            updated.append(
+                spec.model_copy(update={"extra_placeholders": new_placeholders})
+            )
         else:
             updated.append(spec)
     return updated

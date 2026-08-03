@@ -116,8 +116,8 @@ class DatafariSearchEngine(BaseSearchEngine):
         query_template: Path | str,
         doc_fields: List[str],
         keyword: str = "*:*",
-        collection: str | None = None, 
-        extra_placeholders: Dict[str, str] | None = None
+        collection: str | None = None,
+        extra_placeholders: Dict[str, str] | None = None,
     ) -> List[Document]:
         """
         Executes a search using a query template for evaluation purposes.
@@ -130,13 +130,19 @@ class DatafariSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of documents matching the query.
         """
-        log.info("Fetching documents (rows) based on query template for query evaluation")
+        log.info(
+            "Fetching documents (rows) based on query template for query evaluation"
+        )
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
-        payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, self.escape(keyword))
-        payload['fl'] = self._unify_fields(doc_fields)
-        payload['collection'] = collection
+        payload: Dict[str, Any] = self._parse_query_template(
+            query_template, extra_placeholders
+        )
+        payload = self._replace_placeholder(
+            payload, self.QUERY_PLACEHOLDER, self.escape(keyword)
+        )
+        payload["fl"] = self._unify_fields(doc_fields)
+        payload["collection"] = collection
 
         return self._search(payload)
 
@@ -154,7 +160,7 @@ class DatafariSearchEngine(BaseSearchEngine):
             List[Document]: A list of documents formatted as `Document` instances.
         """
 
-        #search_url = urljoin(self.endpoint.encoded_string(), "select")
+        # search_url = urljoin(self.endpoint.encoded_string(), "select")
         search_url = self.endpoint.encoded_string().rstrip("/")
         if self.UNIQUE_KEY not in payload.get("fl", []):
             payload["fl"].append(self.UNIQUE_KEY)
@@ -187,10 +193,14 @@ class DatafariSearchEngine(BaseSearchEngine):
             result.append(Document(id=doc_id, fields=fields))
         log.info(f"Fetched {len(result)} documents from the engine")
         return result
-    
+
     def _unify_fields(self, doc_fields: List[str]) -> str:
-        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
-        return ','.join(fields)
+        fields = (
+            doc_fields
+            if self.UNIQUE_KEY in doc_fields
+            else doc_fields + [self.UNIQUE_KEY]
+        )
+        return ",".join(fields)
 
     @staticmethod
     def _normalize(value: Any) -> List[str]:

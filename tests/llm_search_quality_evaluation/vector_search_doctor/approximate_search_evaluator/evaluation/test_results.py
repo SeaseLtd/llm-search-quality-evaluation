@@ -12,7 +12,9 @@ from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evalu
 )
 
 _META = EvaluationMeta(
-    search_engine=SearchEngineMeta(type="solr", endpoint="http://localhost:8983/solr/testcore/"),
+    search_engine=SearchEngineMeta(
+        type="solr", endpoint="http://localhost:8983/solr/testcore/"
+    ),
     query_template="template.json",
     top_k=10,
     max_rating_value=4,
@@ -52,7 +54,10 @@ class TestWriteResults:
     def test_meta_header_present(self, tmp_path: Path) -> None:
         path = write_results(_RESULT, _RUN, _QRELS, _META, tmp_path)
         data = json.loads(path.read_text())
-        assert data["search_engine"] == {"type": "solr", "endpoint": "http://localhost:8983/solr/testcore/"}
+        assert data["search_engine"] == {
+            "type": "solr",
+            "endpoint": "http://localhost:8983/solr/testcore/",
+        }
         assert data["query_template"] == "template.json"
         assert data["top_k"] == 10
         assert data["max_rating_value"] == 4
