@@ -3,12 +3,14 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Optional, Literal
+from urllib.parse import urljoin
 
 import yaml
-from pydantic import BaseModel, Field, FilePath, HttpUrl, model_validator
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.constants import (
-    ELASTICSEARCH_SUPPORTED_VERSIONS,
-    SOLR_SUPPORTED_VERSIONS,
+from pydantic import BaseModel, Field, FilePath, HttpUrl, field_validator, model_validator
+
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.metrics import (
+    DEFAULT_METRICS,
+    is_supported_metric,
 )
 
 log = logging.getLogger(__name__)
@@ -17,91 +19,77 @@ log = logging.getLogger(__name__)
 class Config(BaseModel):
     query_template: FilePath = Field(
         ...,
-        description="Path pointing to a template file for queries with a placeholder for keywords.",
+        description="Path to a query template file with a placeholder for keywords.",
     )
-    search_engine_type: Literal["solr", "elasticsearch"]
-    collection_name: str = Field(
-        ..., description="Name of the index/collection of the search engine"
-    )
-    search_engine_url: HttpUrl = Field(..., description="Search engine URL")
-    search_engine_version: str = Field(
-        default="latest", description="Search engine version."
-    )
+    search_engine_type: Literal["solr", "elasticsearch", "opensearch", "datafari"]
+    collection_name: str = Field(..., description="Name of the index/collection.")
+    search_engine_url: HttpUrl = Field(..., description="Base search engine URL.")
     id_field: Optional[str] = Field(None, description="ID field for the unique key.")
     query_placeholder: str = Field(
         default="$query",
-        description="Key-value pair to substitute in the rre query template.",
+        description="Placeholder substituted with the keyword in the query template.",
     )
-    ratings_path: Optional[Path] = Field(
-        None,
-        description="Path to the rre ratings file. If not given, the content of the datastore is used.",
+    evaluation_dataset_path: FilePath = Field(
+        ...,
+        description="Path to the evaluation_dataset.json.gz file.",
     )
-    embeddings_folder: Optional[Path] = Field(
+    embeddings_file: Optional[FilePath] = Field(
         None,
-        description="Path to collect embeddings. If not given, embeddings are not collected.",
+        description="Path to the precomputed query embeddings JSONL file. Required for vector queries.",
     )
     output_destination: Path = Field(
         Path("resources"),
-        description="Path to save the output dataset. By default, the "
-        "dataset will be saved into the `resources` folder.",
+        description="Directory where evaluation results are written.",
+    )
+    doc_fields: list[str] = Field(
+        default_factory=list,
+        description="Document fields to request from the engine.",
+    )
+    top_k: int = Field(
+        default=10,
+        gt=0,
+        description="Number of top results per query fed to the metrics.",
+    )
+    metrics: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_METRICS),
+        description="ranx metric names to compute (e.g. ndcg@10, map@10).",
     )
 
     @property
-    def conf_sets_filename(self) -> str:
-        if self.search_engine_type == "solr":
-            return "solr-settings.json"
-        else:
-            return "index-settings.json"
+    def search_engine_collection_endpoint(self) -> HttpUrl:
+        """Return the endpoint used by the search engine."""
+        if self.search_engine_type == "datafari":
+            return self.search_engine_url
 
-    @property
-    def collection_name_alias(self) -> str:
-        if self.search_engine_type == "solr":
-            return "collectionName"
-        else:  # self.search_engine_type == "elasticsearch"
-            return "index"
-
-    @property
-    def search_engine_url_alias(self) -> str:
-        if self.search_engine_type == "solr":
-            return "baseUrls"
-        else:  # self.search_engine_type == "elasticsearch"
-            return "hostUrls"
-
-    @model_validator(mode="after")
-    def validate_search_engine_version(self) -> "Config":
-        if self.search_engine_type == "solr":
-            versions_to_check = SOLR_SUPPORTED_VERSIONS
-        else:  # self.search_engine_type == "elasticsearch"
-            versions_to_check = ELASTICSEARCH_SUPPORTED_VERSIONS
-
-        if self.search_engine_version == "latest":
-            self.search_engine_version = versions_to_check[-1]
-        elif self.search_engine_version not in versions_to_check:
-            raise ValueError(
-                f"Search engine version {self.search_engine_version} is not supported for {self.search_engine_type}"
+        return HttpUrl(
+            urljoin(
+                self.search_engine_url.encoded_string() + "/",
+                self.collection_name + "/"
             )
-        return self
+        )
+
+    @field_validator("metrics")
+    @classmethod
+    def validate_metrics(cls, value: list[str]) -> list[str]:
+        if not value:
+            raise ValueError("metrics must not be empty")
+        unsupported = [m for m in value if not is_supported_metric(m)]
+        if unsupported:
+            raise ValueError(f"Unsupported metric(s): {unsupported}")
+        return value
 
     @model_validator(mode="after")
     def adjust_id_field(self) -> "Config":
         if self.id_field is None:
-            if self.search_engine_type == "solr":
-                self.id_field = "id"
-            else:  # self.search_engine_type == "elasticsearch"
+            if self.search_engine_type == "elasticsearch":
                 self.id_field = "_id"
+            else:  # solr, opensearch
+                self.id_field = "id"
         return self
 
     @classmethod
-    def load(cls, config_path: str) -> Config:
-        """
-        Load and validate configuration from a yaml file.
-
-        :param config_path: Path to the yaml config file
-        :return: Parsed and validated Config object
-        """
+    def load(cls, config_path: str) -> "Config":
         with open(config_path, "r") as f:
             raw_config = yaml.safe_load(f)
-            log.debug(
-                "Approximate Search Evaluator configuration file loaded successfully."
-            )
+            log.debug("Approximate Search Evaluator configuration file loaded successfully.")
         return cls(**raw_config)

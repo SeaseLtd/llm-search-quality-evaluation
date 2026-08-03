@@ -18,9 +18,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+import importlib
+
 import mteb
 from mteb.models.cache_wrapper import CachedEmbeddingWrapper
 from mteb.overview import TASKS_REGISTRY
+from packaging.version import InvalidVersion as _InvalidVersion
+from packaging.version import Version as _Version
 
 from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import (
     Config,
@@ -159,7 +163,23 @@ def compute_mteb_leaderboard_comparison(model_name: str, task_type: str) -> dict
     num_tasks = len(tasks) * 0.7
 
     # 1. Fetch mteb results from https://github.com/embeddings-benchmark/results into ~/.cache/mteb/results
-    all_results = mteb.load_results(tasks=tasks).join_revisions()
+    # Some result files in the public MTEB repo have non-PEP440 mteb_version strings (e.g. '2.16.2-2.18.0')
+    # that crash packaging.version.Version. We patch Version in the MTEB module to treat unparseable
+    # versions as a recent release, so the file is loaded without special legacy handling.
+    _mteb_task_results = importlib.import_module("mteb.load_results.task_results")
+
+    class _SafeVersion(_Version):
+        def __init__(self, version: str) -> None:
+            try:
+                super().__init__(version)
+            except _InvalidVersion:
+                super().__init__("999.999.999")
+
+    _mteb_task_results.Version = _SafeVersion  # type: ignore[attr-defined]
+    try:
+        all_results = mteb.load_results(tasks=tasks).join_revisions()
+    finally:
+        _mteb_task_results.Version = _Version  # type: ignore[attr-defined]
 
     # 2. Calculate averages for all models.
     model_averages = {}  # <model_name, avg_main_score>

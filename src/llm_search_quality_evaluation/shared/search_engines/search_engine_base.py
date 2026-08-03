@@ -85,13 +85,15 @@ class BaseSearchEngine(ABC):
             # we are adding NUMBER_OF_DOCS_EACH_FETCH (not len(batch)) and start becomes greater than total_hits
             start += NUMBER_OF_DOCS_EACH_FETCH
 
-    def _parse_query_template(self, path: Path | str) -> Dict[str, Any]:
-        """Return the payload"""
+    def _parse_query_template(self, path: Path | str, extra_placeholders: Dict[str, str] | None = None) -> Dict[str, Any]:
+        """Return the payload, applying extra_placeholders verbatim before JSON parsing."""
         path = Path(path)
         try:
             with path.open() as f:
-                data: Dict[str, Any] = json.load(f)
-                return data
+                text = f.read()
+            text = self._apply_extra_placeholders(text, extra_placeholders)
+            data: Dict[str, Any] = json.loads(text)
+            return data
         except JSONDecodeError as e:
             raise ValueError(f"Invalid JSON query_template: {e}")
 
@@ -153,3 +155,11 @@ class BaseSearchEngine(ABC):
     def _fetch_all_payload(self) -> Dict[str, Any]:
         """Payload to fetch all documents from the search engine."""
         pass
+
+    def _apply_extra_placeholders(self, text: str, extra_placeholders: Dict[str, str] | None) -> str:
+        """Substitute extra_placeholders verbatim in raw template text before JSON parsing."""
+        if not extra_placeholders:
+            return text
+        for placeholder, value in extra_placeholders.items():
+            text = text.replace(placeholder, value)
+        return text

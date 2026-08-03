@@ -3,11 +3,9 @@ from urllib.parse import urljoin
 import requests
 from pydantic import HttpUrl
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
-from typing import List, Dict, Any, Union, Optional
+from typing import List, Dict, Any, Union
 
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
-    BaseSearchEngine,
-)
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
 from llm_search_quality_evaluation.shared.models.document import Document
 from llm_search_quality_evaluation.shared.utils import clean_text
 
@@ -24,60 +22,44 @@ class SolrSearchEngine(BaseSearchEngine):
 
     def __init__(self, endpoint: HttpUrl):
         super().__init__(endpoint)
-        self.HEADERS = {"Content-Type": "application/json"}
+        self.HEADERS = {'Accept': 'application/json'}
         log.debug(f"Working on endpoint: {self.endpoint}")
-        self.UNIQUE_KEY = requests.get(
-            urljoin(self.endpoint.encoded_string(), "schema/uniquekey")
-        ).json()["uniqueKey"]
+        self.UNIQUE_KEY = requests.get(urljoin(self.endpoint.encoded_string(), 'schema/uniquekey')).json()['uniqueKey']
         log.debug(f"uniqueKey found: {self.UNIQUE_KEY}")
 
     @property
     def _fetch_all_payload(self) -> Dict[str, Any]:
         return {
-            "q": "*:*",
+            'q': '*:*',
         }
 
     def _unify_fields(self, doc_fields: List[str]) -> str:
-        fields = (
-            doc_fields
-            if self.UNIQUE_KEY in doc_fields
-            else doc_fields + [self.UNIQUE_KEY]
-        )
-        return ",".join(fields)
+        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
+        return ','.join(fields)
 
-    def _get_total_hits(
-        self, payload: Dict[str, Any], collection: Optional[str]
-    ) -> int:
-        search_url = urljoin(self.endpoint.encoded_string(), "select")
+    def _get_total_hits(self, payload: Dict[str, Any], collection: str| None = None) -> int:
+        search_url = urljoin(self.endpoint.encoded_string(), 'select')
 
         # Force Solr to return a JSON formatted response
-        payload["wt"] = "json"
+        payload['wt'] = 'json'
 
         log.debug("Retrieving all docs to count them")
         log.debug(f"Search url: {search_url}")
-        log.debug(
-            f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
-        )
+        log.debug(f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
-            response = requests.get(search_url, headers=self.HEADERS, params=payload)
+            response = requests.post(search_url, headers=self.HEADERS, data=payload)
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException, HTTPError) as e:
             log.error(f"Solr query failed: {e}\n")
             raise
 
-        return int(response.json().get("response", {}).get("numFound", 0))
+        return int(response.json().get('response', {}).get('numFound', 0))
 
-    def fetch_for_query_generation(
-        self,
-        documents_filter: Union[None, List[Dict[str, List[str]]]],
-        number_of_docs: int,
-        doc_fields: List[str],
-        start: int = 0,
-        collection: Optional[
-            str
-        ] = None,  # Added an optional collection parameter to match datafari constraints
-    ) -> List[Document]:
+    def fetch_for_query_generation(self,
+                                   documents_filter: Union[None, List[Dict[str, List[str]]]],
+                                   number_of_docs: int, doc_fields: List[str], start: int = 0, collection: str| None = None) \
+            -> List[Document]:
         """
         Fetches a set of documents from Solr for the purpose of query generation.
 
@@ -90,37 +72,29 @@ class SolrSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of retrieved documents as `Document` objects.
         """
-        log.info(
-            f"Fetching {number_of_docs} documents (rows) from the search engine for query generation"
-        )
+        log.info(f"Fetching {number_of_docs} documents (rows) from the search engine for query generation")
 
         payload: Dict[str, Any] = self._fetch_all_payload
-        payload["rows"] = number_of_docs
-        payload["start"] = start
-        payload["fl"] = self._unify_fields(doc_fields)
+        payload['rows'] = number_of_docs
+        payload['start'] = start
+        payload['fl'] = self._unify_fields(doc_fields)
 
         if documents_filter is not None:
-            payload["fq"] = []
+            payload['fq'] = []
             for dict_field in documents_filter:
                 for field, values in dict_field.items():
                     if not values:
                         continue  # skip empty lists
                     if len(values) == 1:
-                        clause = f"{field}:{values[0]}"
+                        clause = f'{field}:{values[0]}'
                     else:
-                        or_values = " OR ".join(f"{v}" for v in values)
-                        clause = f"{field}:({or_values})"
-                    payload["fq"].append(clause)
+                        or_values = ' OR '.join(f'{v}' for v in values)
+                        clause = f'{field}:({or_values})'
+                    payload['fq'].append(clause)
 
         return self._search(payload)
 
-    def fetch_for_evaluation(
-        self,
-        query_template: Path | str,
-        doc_fields: List[str],
-        keyword: str = "*:*",
-        collection: str | None = None,
-    ) -> List[Document]:
+    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str="*:*", extra_placeholders: Dict[str, str] | None = None, collection: str| None = None) -> List[Document]:
         """
         Executes a search using a query template for evaluation purposes.
 
@@ -132,22 +106,18 @@ class SolrSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of documents matching the query.
         """
-        log.info(
-            "Fetching documents (rows) based on query template for query evaluation"
-        )
+        log.info("Fetching documents (rows) based on query template for query evaluation")
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template)
-        payload = self._replace_placeholder(
-            payload, self.QUERY_PLACEHOLDER, self.escape(keyword)
-        )
-        payload["fl"] = self._unify_fields(doc_fields)
+        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
+        payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, self.escape(keyword))
+        payload['fl'] = self._unify_fields(doc_fields)
 
         return self._search(payload)
 
     def _search(self, payload: Dict[str, Any]) -> List[Document]:
         """
-        Executes a Solr search using a JSON payload and parses the results.
+        Executes a Solr search using a POST body and parses the results.
 
         Args:
             payload (Dict[str, Any]): The JSON payload to send in the POST request to Solr.
@@ -155,25 +125,24 @@ class SolrSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of documents formatted as `Document` instances.
         """
-        search_url = urljoin(self.endpoint.encoded_string(), "select")
+        search_url = urljoin(self.endpoint.encoded_string(), 'select')
 
         # Force Solr to return a JSON formatted response
-        payload["wt"] = "json"
+        payload['wt'] = 'json'
 
         log.debug(f"Search url: {search_url}")
-        log.debug(
-            f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
-        )
+        log.debug(f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
-            response = requests.get(search_url, headers=self.HEADERS, params=payload)
+            # POST keeps large vector queries out of the URL and avoids 414 errors.
+            response = requests.post(search_url, headers=self.HEADERS, data=payload)
             log.debug(f"URL: {response.request.url}")
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException, HTTPError) as e:
             log.error(f"Solr query failed: {e}\n")
             raise
 
-        hits = response.json().get("response", {}).get("docs", [])
+        hits = response.json().get('response', {}).get('docs', [])
         result = []
         for hit in hits:
             doc_id = hit.get(self.UNIQUE_KEY)

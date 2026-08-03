@@ -1,3 +1,4 @@
 query_template: "tests/resources/template_solr.json"
 collection_name: "testcore"
 search_engine_url: "http://localhost:8983/solr/"
+evaluation_dataset_path: "tests/resources/approximate_search_evaluator/evaluation_dataset.json.gz"

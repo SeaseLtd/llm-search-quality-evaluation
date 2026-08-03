@@ -8,9 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 from pydantic import HttpUrl
 
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
-    BaseSearchEngine,
-)
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
 from llm_search_quality_evaluation.shared.models.document import Document
 from llm_search_quality_evaluation.shared.utils import clean_text
 
@@ -21,7 +19,7 @@ log = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 10
 
 # Simple field name validation to prevent injection / unvalid strings - valid field names must start with a letter or underscore, followed by alphanumerics or underscores.
-_FIELD_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_FIELD_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$") 
 
 
 class VespaSearchEngine(BaseSearchEngine):
@@ -29,12 +27,11 @@ class VespaSearchEngine(BaseSearchEngine):
     Thin HTTP wrapper around the Vespa Query API.
     Assumes an already deployed a schema called `doc`.
     """
-
     def __init__(self, endpoint: HttpUrl):
         super().__init__(endpoint)
         # Extract schema from endpoint path: http://host:port/schema_name/
-        endpoint_str = str(endpoint).rstrip("/")
-        path_parts = endpoint_str.split("/")
+        endpoint_str = str(endpoint).rstrip('/')
+        path_parts = endpoint_str.split('/')
         if len(path_parts) > 3:
             self.schema = path_parts[-1]  # Last part of the path
         else:
@@ -47,17 +44,15 @@ class VespaSearchEngine(BaseSearchEngine):
 
     @property
     def _fetch_all_payload(self) -> Dict[str, Any]:
-        return {"yql": f"select * from {self.schema}"}
+        return {
+            'yql': f"select * from {self.schema}"
+        }
 
-    def _get_total_hits(
-        self, payload: Dict[str, Any], collection: Optional[str]
-    ) -> int:
+    def _get_total_hits(self, payload: Dict[str, Any], collection: str| None = None) -> int:
         base = str(self.endpoint).rstrip("/")
         search_url = f"{base}/search/"
         log.debug(f"Search url: {search_url}")
-        log.debug(
-            f"Vespa payload (showing payload 500 first chars): {str(payload)[:500]}"
-        )
+        log.debug(f"Vespa payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
             response = requests.post(
@@ -72,9 +67,7 @@ class VespaSearchEngine(BaseSearchEngine):
             log.error(f"Request to {search_url} failed: {e}")
             raise
 
-        return int(
-            response.json().get("root", {}).get("fields", {}).get("totalCount", 0)
-        )
+        return int(response.json().get("root", {}).get("fields", {}).get("totalCount", 0))
 
     def _build_yql(self, select_fields: List[str], where_clause: str = "true") -> str:
         fields = ", ".join(select_fields) if select_fields else "*"
@@ -87,9 +80,8 @@ class VespaSearchEngine(BaseSearchEngine):
         s = re.sub(r"[\x00-\x1F\x7F]", " ", s)
         return f'"{s}"'
 
-    def _validate_filters(
-        self, filters: Union[None, List[Dict[str, List[str]]]]
-    ) -> None:
+
+    def _validate_filters(self, filters: Union[None, List[Dict[str, List[str]]]]) -> None:
         """
         Validate filter field names.
 
@@ -107,6 +99,7 @@ class VespaSearchEngine(BaseSearchEngine):
             for field in f.keys():
                 if not _FIELD_RE.match(field):
                     log.debug(f"Filter field '{field}' is not a valid identifier.")
+
 
     @staticmethod
     def _normalize_field_value(v: Any) -> List[str]:
@@ -129,13 +122,11 @@ class VespaSearchEngine(BaseSearchEngine):
             return [clean_text(i) if isinstance(i, str) else str(i) for i in v]
 
         if isinstance(v, dict):
-            cleaned_dict = {
-                k: (clean_text(val) if isinstance(val, str) else val)
-                for k, val in v.items()
-            }
+            cleaned_dict = {k: (clean_text(val) if isinstance(val, str) else val) for k, val in v.items()}
             return [json.dumps(cleaned_dict)]
 
         return [str(v)]
+
 
     # ---- public API ------------------------------------------------------
 
@@ -144,10 +135,8 @@ class VespaSearchEngine(BaseSearchEngine):
         documents_filter: Union[None, List[Dict[str, List[str]]]],
         number_of_docs: int,
         doc_fields: Optional[List[str]],
-        start: int = 0,
-        collection: Optional[
-            str
-        ] = None,  # Added an optional collection parameter to match datafari constraints
+        start: int  = 0,
+        collection: str| None = None
     ) -> List[Document]:
         """
         Fetch documents from Vespa for the purpose of query generation.
@@ -161,9 +150,7 @@ class VespaSearchEngine(BaseSearchEngine):
         Returns:
             A list of `Document` instances parsed from the response.
         """
-        log.info(
-            f"Fetching {number_of_docs} documents (hits) from the search engine for query generation"
-        )
+        log.info(f"Fetching {number_of_docs} documents (hits) from the search engine for query generation")
 
         payload: Dict[str, Any] = self._fetch_all_payload
 
@@ -173,12 +160,10 @@ class VespaSearchEngine(BaseSearchEngine):
 
         payload["yql"] = yql
         payload["hits"] = int(number_of_docs)
-        payload["presentation.format"] = "json"
-        payload["offset"] = start
+        payload["presentation.format"] =  "json"
+        payload['offset'] = start
 
-        log.debug(
-            f"Vespa payload (showing payload 500 first chars): {str(payload)[:500]}"
-        )
+        log.debug(f"Vespa payload (showing payload 500 first chars): {str(payload)[:500]}")
         return self._search(payload)
 
     def fetch_for_evaluation(
@@ -186,7 +171,8 @@ class VespaSearchEngine(BaseSearchEngine):
         query_template: Path | str,
         doc_fields: Optional[List[str]],
         keyword: str = "*",
-        collection: str | None = None,
+        extra_placeholders: Dict[str, str] | None = None,
+        collection: str| None = None
     ) -> List[Document]:
         """
         Fetch documents from Vespa using a provided YQL template file and keyword.
@@ -200,15 +186,15 @@ class VespaSearchEngine(BaseSearchEngine):
             A list of `Document` instances retrieved from the engine.
         """
 
-        log.info(
-            "Fetching documents (hits) based on query template for query evaluation"
-        )
+        log.info("Fetching documents (hits) based on query template for query evaluation")
 
         # Read the YQL template from file (following the same pattern as other engines)
         if isinstance(query_template, Path):
-            template_str = query_template.read_text(encoding="utf-8").strip()
+            template_str = query_template.read_text(encoding='utf-8').strip()
         else:
             template_str = query_template.strip()
+
+        template_str = self._apply_extra_placeholders(template_str, extra_placeholders)
 
         # Use parameter substitution instead of string replacement for security
         # Template should contain userInput(@kw) with {allowEmpty:true} for empty queries
@@ -216,11 +202,12 @@ class VespaSearchEngine(BaseSearchEngine):
 
         payload = {
             "yql": template_str,  # Template contains userInput(@kw)
-            "kw": kw_param,  # Parameter substitution
+            "kw": kw_param,      # Parameter substitution
             "presentation.format": "json",
         }
         log.debug(f"Vespa payload (evaluation): {str(payload)[:1000]}")
         return self._search(payload)
+
 
     # ---- low‑level call --------------------------------------------------
 
@@ -246,8 +233,8 @@ class VespaSearchEngine(BaseSearchEngine):
                 search_url,
                 headers=self.HEADERS,
                 json=payload,
-                timeout=DEFAULT_TIMEOUT,  # added timeout to avoid blocking calls
-                allow_redirects=False,  # added allow_redirects
+                timeout=DEFAULT_TIMEOUT, # added timeout to avoid blocking calls
+                allow_redirects=False,   # added allow_redirects
             )
             response.raise_for_status()
         except (ConnectionError, Timeout, RequestException) as e:
@@ -260,15 +247,11 @@ class VespaSearchEngine(BaseSearchEngine):
         for hit in hits:
             doc_id = hit.get("id")
             if not doc_id:
-                log.debug(
-                    f"Potential corrupted entry without id in Vespa _search: {hit}"
-                )
+                log.debug(f"Potential corrupted entry without id in Vespa _search: {hit}")
                 continue
             fields = hit.get("fields", {}) or {}
 
-            normalized_fields = {
-                k: self._normalize_field_value(v) for k, v in fields.items()
-            }
+            normalized_fields = {k: self._normalize_field_value(v) for k, v in fields.items()}
             docs.append(Document(id=doc_id, fields=normalized_fields))
         log.info(f"Fetched {len(docs)} documents from the engine")
         return docs
@@ -324,7 +307,7 @@ class VespaSearchEngine(BaseSearchEngine):
                         valid_values.append(str(v))
                     else:
                         log.debug(f"Skipping None value in field '{field}' filters.")
-
+                
                 # Append valid values, deduplicating later
                 aggregated[field].extend(valid_values)
 

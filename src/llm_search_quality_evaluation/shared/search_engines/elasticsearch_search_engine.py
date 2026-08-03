@@ -7,14 +7,11 @@ from pydantic import HttpUrl
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 from typing import List, Dict, Any, Union, Optional
 
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
-    BaseSearchEngine,
-)
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
 from llm_search_quality_evaluation.shared.models.document import Document
 from llm_search_quality_evaluation.shared.utils import clean_text
 
 import logging
-
 log = logging.getLogger(__name__)
 
 
@@ -22,22 +19,17 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
     """
     Elasticsearch implementation to search into a given collection
     """
-
     def __init__(self, endpoint: HttpUrl):
         super().__init__(endpoint)
-        self.HEADERS = {"Content-Type": "application/json"}
+        self.HEADERS = {'Content-Type': 'application/json'}
         log.debug(f"Working on endpoint: {self.endpoint}")
         self.UNIQUE_KEY = "_id"
 
-    def _get_total_hits(
-        self, payload: Dict[str, Any], collection: Optional[str]
-    ) -> int:
-        search_url = urljoin(self.endpoint.encoded_string(), "_search")
+    def _get_total_hits(self, payload: Dict[str, Any], collection: str| None = None) -> int:
+        search_url = urljoin(self.endpoint.encoded_string(), '_search')
 
         log.debug(f"Search url: {search_url}")
-        log.debug(
-            f"Elasticsearch payload (showing payload 500 first chars): {str(payload)[:500]}"
-        )
+        log.debug(f"Elasticsearch payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
             response = requests.post(search_url, headers=self.HEADERS, json=payload)
@@ -46,20 +38,18 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
             log.error(f"ElasticSearch query failed: {e}")
             raise
 
-        return int(response.json().get("hits", {}).get("total", {}).get("value", 0))
+        return int(response.json().get('hits', {}).get('total', {}).get('value', 0))
 
     @property
     def _fetch_all_payload(self) -> Dict[str, Any]:
         return {"match_all": {}}
 
-    def fetch_for_query_generation(
-        self,
-        documents_filter: Union[None, List[Dict[str, List[str]]]],
-        number_of_docs: int,
-        doc_fields: List[str],
-        start: int = 0,
-        collection: str | None = None,
-    ) -> List[Document]:
+    def fetch_for_query_generation(self,
+                                   documents_filter: Union[None, List[Dict[str, List[str]]]],
+                                   number_of_docs: int,
+                                   doc_fields: List[str],
+                                   start: int = 0, 
+                                   collection: str| None = None) -> List[Document]:
         """
         Fetches a set of documents from Elasticsearch for query generation purposes.
 
@@ -73,9 +63,7 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of documents formatted as `Document` instances.
         """
-        log.info(
-            f"Fetching {number_of_docs} documents (size) from the search engine for query generation"
-        )
+        log.info(f"Fetching {number_of_docs} documents (size) from the search engine for query generation")
 
         # Build base query
         query: Dict[str, Any] = self._fetch_all_payload
@@ -91,25 +79,24 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
 
         # Wrap in a bool query if there are any filters
         if filter_clauses:
-            query = {"bool": {"must": {"match_all": {}}, "filter": filter_clauses}}
+            query = {
+                "bool": {
+                    "must": {"match_all": {}},
+                    "filter": filter_clauses
+                }
+            }
 
         # Construct the payload (Elasticsearch query body)
         payload = {
             "size": number_of_docs,
             "query": query,
             "from": start,
-            "_source": doc_fields,
+            "_source": doc_fields
         }
 
         return self._search(payload)
 
-    def fetch_for_evaluation(
-        self,
-        query_template: Path | str,
-        doc_fields: List[str],
-        keyword: Optional[str] = None,
-        collection: str | None = None,
-    ) -> List[Document]:
+    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: Optional[str] = None, extra_placeholders: Dict[str, str] | None = None, collection: str| None = None) -> List[Document]:
         """
         Executes a search for evaluation using a query template with an optional keyword substitution.
 
@@ -122,19 +109,13 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of documents matching the query.
         """
-        log.info(
-            "Fetching documents (size) based on query template for query evaluation"
-        )
+        log.info("Fetching documents (size) based on query template for query evaluation")
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template)
+        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
         payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, keyword)
 
-        fields = (
-            doc_fields
-            if self.UNIQUE_KEY in doc_fields
-            else doc_fields + [self.UNIQUE_KEY]
-        )
+        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
         payload["_source"] = fields
         return self._search(payload)
 
@@ -148,12 +129,10 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of retrieved documents as `Document` instances.
         """
-        search_url = urljoin(self.endpoint.encoded_string(), "_search")
+        search_url = urljoin(self.endpoint.encoded_string(), '_search')
 
         log.debug(f"Search url: {search_url}")
-        log.debug(
-            f"Elasticsearch payload (showing payload 500 first chars): {str(payload)[:500]}"
-        )
+        log.debug(f"Elasticsearch payload (showing payload 500 first chars): {str(payload)[:500]}")
 
         try:
             response = requests.post(search_url, headers=self.HEADERS, json=payload)
@@ -162,7 +141,7 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
             log.error(f"ElasticSearch query failed: {e}")
             raise
 
-        hits = response.json().get("hits", {}).get("hits", [])
+        hits = response.json().get('hits', {}).get('hits', [])
         result = []
         for hit in hits:
             source = hit.get("_source", {})
