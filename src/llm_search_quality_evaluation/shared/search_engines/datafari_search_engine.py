@@ -43,7 +43,7 @@ class DatafariSearchEngine(BaseSearchEngine):
     ) -> int:
         search_url = urljoin(self.endpoint.encoded_string(), "select")
 
-        # Force Solr to return a JSON formatted response
+        # Force datafari to return a JSON formatted response
         payload["wt"] = "json"
         if collection_name:
             payload["collection"] = collection_name
@@ -51,7 +51,7 @@ class DatafariSearchEngine(BaseSearchEngine):
         log.debug("Retrieving all docs to count them")
         log.debug(f"Search url: {search_url}")
         log.debug(
-            f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
+            f"datafari payload (showing payload 500 first chars): {str(payload)[:500]}"
         )
 
         try:
@@ -76,7 +76,7 @@ class DatafariSearchEngine(BaseSearchEngine):
         collection: str | None = None,
     ) -> List[Document]:
         """
-        Fetches a set of documents from Solr for the purpose of query generation.
+        Fetches a set of documents from datafari for the purpose of query generation.
 
         Args:
             documents_filter (Union[None, List[Dict[str, List[str]]]]): Optional filter constraints for fields and their allowed values.
@@ -151,26 +151,25 @@ class DatafariSearchEngine(BaseSearchEngine):
         payload: Dict[str, Any],
     ) -> List[Document]:
         """
-        Executes a Solr search using a JSON payload and parses the results.
+        Executes a datafari search using a JSON payload and parses the results.
 
         Args:
-            payload (Dict[str, Any]): The JSON payload to send in the POST request to Solr.
+            payload (Dict[str, Any]): The JSON payload to send in the POST request to datafari.
 
         Returns:
             List[Document]: A list of documents formatted as `Document` instances.
         """
 
-        # search_url = urljoin(self.endpoint.encoded_string(), "select")
         search_url = self.endpoint.encoded_string().rstrip("/")
         if self.UNIQUE_KEY not in payload.get("fl", []):
             payload["fl"].append(self.UNIQUE_KEY)
 
-        # Force Solr to return a JSON formatted response
+        # Force Sodatafarilr to return a JSON formatted response
         payload["wt"] = "json"
 
         log.info(f"Search url: {search_url}")
         log.debug(
-            f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
+            f"datafari payload (showing payload 500 first chars): {str(payload)[:500]}"
         )
 
         try:
