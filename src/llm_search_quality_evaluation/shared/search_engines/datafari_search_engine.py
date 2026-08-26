@@ -41,7 +41,7 @@ class DatafariSearchEngine(BaseSearchEngine):
     def _get_total_hits(
         self, payload: Dict[str, Any], collection_name: Optional[str]
     ) -> int:
-        search_url = urljoin(self.endpoint.encoded_string(), "select")
+        search_url = self.endpoint.encoded_string()
 
         # Force datafari to return a JSON formatted response
         payload["wt"] = "json"
@@ -164,7 +164,7 @@ class DatafariSearchEngine(BaseSearchEngine):
         if self.UNIQUE_KEY not in payload.get("fl", []):
             payload["fl"].append(self.UNIQUE_KEY)
 
-        # Force Sodatafarilr to return a JSON formatted response
+        # Force datafari to return a JSON formatted response
         payload["wt"] = "json"
 
         log.info(f"Search url: {search_url}")
