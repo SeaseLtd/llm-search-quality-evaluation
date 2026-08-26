@@ -4,19 +4,23 @@ from pydantic import ValidationError
 
 from llm_search_quality_evaluation.shared.models import Document, Query, Rating
 
+
 def test_document_ok__expects__returns_id_and_field_value():
     d = Document(id="x", fields={"k": 1})
     assert d.id == "x"
     assert d.fields["k"] == 1
+
 
 def test_document_empty_fields__expects__allowed_for_id_only_workflows():
     d = Document(id="x", fields={})
     assert d.id == "x"
     assert d.fields == {}
 
+
 def test_document_empty_key__expects__raises_value_error():
     with pytest.raises(ValueError):
         Document(id="x", fields={"": 1})
+
 
 def test_rating_non_negative__expects__raises_validation_error_for_negative_score():
     with pytest.raises(ValidationError):
@@ -24,6 +28,7 @@ def test_rating_non_negative__expects__raises_validation_error_for_negative_scor
 
 
 # ---------------- Additional edge cases ----------------
+
 
 @pytest.mark.parametrize(
     "fields",
@@ -51,7 +56,7 @@ def test_document_fields_json_serializable_valid(fields):
         # non-string key nested
         {"nested": {1: "a"}},
         # nested non-serializable
-        {"nested": {"k": [1, 2, set([3])]}}
+        {"nested": {"k": [1, 2, set([3])]}},
     ],
 )
 def test_document_fields_json_serializable_invalid(fields):
@@ -78,4 +83,3 @@ def test_query_auto_generates_id__expects__non_empty_string():
 def test_rating_non_negative_scores__expects__ok(score):
     r = Rating(doc_id="d", query_id="q", score=score)
     assert r.score == score
-

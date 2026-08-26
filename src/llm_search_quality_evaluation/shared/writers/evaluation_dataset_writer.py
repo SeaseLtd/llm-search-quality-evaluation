@@ -4,7 +4,9 @@ import logging
 from pathlib import Path
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
-from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
+from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import (
+    EvaluationDataset,
+)
 from llm_search_quality_evaluation.shared.writers.abstract_writer import AbstractWriter
 
 log = logging.getLogger(__name__)

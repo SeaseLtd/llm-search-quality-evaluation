@@ -171,7 +171,10 @@ def test_elasticsearch_search_engine_bad_url__expects__raises_validation_error()
 
 # --- extra_placeholders tests ---
 
-def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects__json_array(monkeypatch, tmp_path):
+
+def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects__json_array(
+    monkeypatch, tmp_path
+):
     """Unquoted $vector in template -> parsed payload has a real JSON array."""
     template = tmp_path / "knn.json"
     template.write_text('{"knn": {"field": "vec", "query_vector": $vector}}')
@@ -179,9 +182,11 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects
     engine = ElasticsearchSearchEngine("https://fakeurl")
 
     captured = {}
+
     def fake_search(payload):
         captured["payload"] = payload
         return []
+
     monkeypatch.setattr(engine, "_search", fake_search)
 
     engine.fetch_for_evaluation(
@@ -193,7 +198,9 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects
     assert captured["payload"]["knn"]["query_vector"] == [1.0, 2.0]
 
 
-def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__string(monkeypatch, tmp_path):
+def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__string(
+    monkeypatch, tmp_path
+):
     """Quoted $vector in template -> parsed payload has a string value."""
     template = tmp_path / "knn.json"
     template.write_text('{"q": "$vector"}')
@@ -201,9 +208,11 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__
     engine = ElasticsearchSearchEngine("https://fakeurl")
 
     captured = {}
+
     def fake_search(payload):
         captured["payload"] = payload
         return []
+
     monkeypatch.setattr(engine, "_search", fake_search)
 
     engine.fetch_for_evaluation(
@@ -216,7 +225,9 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__
     assert isinstance(captured["payload"]["q"], str)
 
 
-def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects__no_change(monkeypatch, tmp_path):
+def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects__no_change(
+    monkeypatch, tmp_path
+):
     """Omitting extra_placeholders leaves existing behavior unchanged."""
     template = tmp_path / "simple.json"
     template.write_text('{"query": {"match": {"title": "$query"}}}')
@@ -224,9 +235,11 @@ def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects_
     engine = ElasticsearchSearchEngine("https://fakeurl")
 
     captured = {}
+
     def fake_search(payload):
         captured["payload"] = payload
         return []
+
     monkeypatch.setattr(engine, "_search", fake_search)
 
     engine.fetch_for_evaluation(

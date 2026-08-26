@@ -55,18 +55,24 @@ class TestBuildInputFromEvaluationDataset:
         assert result.qrels["query one"]["doc2"] == 0
         assert result.qrels["query two"]["doc3"] == 1
 
-    def test_zero_score_is_present_in_qrels(self, base_dataset: EvaluationDataset) -> None:
+    def test_zero_score_is_present_in_qrels(
+        self, base_dataset: EvaluationDataset
+    ) -> None:
         result = build_input_from_evaluation_dataset(base_dataset)
         assert "doc2" in result.qrels["query one"]
         assert result.qrels["query one"]["doc2"] == 0
 
-    def test_query_specs_one_per_rated_query(self, base_dataset: EvaluationDataset) -> None:
+    def test_query_specs_one_per_rated_query(
+        self, base_dataset: EvaluationDataset
+    ) -> None:
         result = build_input_from_evaluation_dataset(base_dataset)
         assert len(result.query_specs) == 2
         texts = {qs.text for qs in result.query_specs}
         assert texts == {"query one", "query two"}
 
-    def test_query_specs_extra_placeholders_empty(self, base_dataset: EvaluationDataset) -> None:
+    def test_query_specs_extra_placeholders_empty(
+        self, base_dataset: EvaluationDataset
+    ) -> None:
         result = build_input_from_evaluation_dataset(base_dataset)
         for qs in result.query_specs:
             assert qs.extra_placeholders == {}
@@ -76,16 +82,22 @@ class TestBuildInputFromEvaluationDataset:
         assert "query three" not in result.qrels
         assert all(qs.text != "query three" for qs in result.query_specs)
 
-    def test_max_rating_value_carried_through(self, base_dataset: EvaluationDataset) -> None:
+    def test_max_rating_value_carried_through(
+        self, base_dataset: EvaluationDataset
+    ) -> None:
         result = build_input_from_evaluation_dataset(base_dataset)
         assert result.max_rating_value == 2
 
-    def test_query_specs_order_is_deterministic(self, base_dataset: EvaluationDataset) -> None:
+    def test_query_specs_order_is_deterministic(
+        self, base_dataset: EvaluationDataset
+    ) -> None:
         r1 = build_input_from_evaluation_dataset(base_dataset)
         r2 = build_input_from_evaluation_dataset(base_dataset)
         assert [qs.text for qs in r1.query_specs] == [qs.text for qs in r2.query_specs]
 
-    def test_unknown_query_id_in_rating_is_skipped(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_unknown_query_id_in_rating_is_skipped(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         q = Query(id="q1", text="known query")
         doc = Document(id="doc1", fields={"title": "a"})
         ratings = [
@@ -98,7 +110,9 @@ class TestBuildInputFromEvaluationDataset:
         assert "ghost" in caplog.text
         assert len(result.qrels) == 1
 
-    def test_duplicate_query_text_emits_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_duplicate_query_text_emits_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         q1 = Query(id="q1", text="same text")
         q2 = Query(id="q2", text="same text")
         doc = Document(id="doc1", fields={"title": "a"})

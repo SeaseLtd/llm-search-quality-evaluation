@@ -4,14 +4,19 @@ Approximate Search Evaluator.
 Loads an evaluation dataset (evaluation_dataset.json.gz), runs each query against the
 configured search engine, computes IR metrics via ranx, and writes evaluation_results.json.
 """
+
 import argparse
 import logging
 import sys
 
 from llm_search_quality_evaluation.shared.logger import setup_logging
-from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
+from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import (
+    EvaluationDataset,
+)
 from llm_search_quality_evaluation.shared.search_engines import SearchEngineFactory
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.config import Config
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.config import (
+    Config,
+)
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.embeddings import (
     attach_vectors,
     ensure_placeholder_values,
@@ -45,14 +50,18 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=str,
-        help='Config file path to use for the application [default: '
-             '"examples/configs/vector_search_doctor/approximate_search_evaluator/approximate_search_evaluator_config.yaml"]',
+        help="Config file path to use for the application [default: "
+        '"examples/configs/vector_search_doctor/approximate_search_evaluator/approximate_search_evaluator_config.yaml"]',
         required=False,
         default="examples/configs/vector_search_doctor/approximate_search_evaluator/approximate_search_evaluator_config.yaml",
     )
 
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Activate debug mode for logging [default: False]")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Activate debug mode for logging [default: False]",
+    )
 
     return parser.parse_args()
 
@@ -92,7 +101,11 @@ def main() -> None:
         ensure_placeholder_values(eval_input.query_specs, VECTOR_PLACEHOLDER)
 
     run = build_run(
-        search_engine, config.query_template, eval_input.query_specs, config.doc_fields, config.top_k
+        search_engine,
+        config.query_template,
+        eval_input.query_specs,
+        config.doc_fields,
+        config.top_k,
     )
 
     threshold = relevance_threshold(eval_input.max_rating_value)
@@ -108,13 +121,17 @@ def main() -> None:
         max_rating_value=eval_input.max_rating_value,
         relevance_threshold=threshold,
     )
-    out_path = write_results(result, run, eval_input.qrels, meta, config.output_destination)
+    out_path = write_results(
+        result, run, eval_input.qrels, meta, config.output_destination
+    )
 
     col_width = max(len(m) for m in result.aggregate) + 2
     metrics_lines = "\n".join(
         f"  {m:<{col_width}}{v:.3f}" for m, v in result.aggregate.items()
     )
-    log.info(f"Evaluation completed.\n\nMetrics:\n{metrics_lines}\n\nResults written to:\n  {out_path}")
+    log.info(
+        f"Evaluation completed.\n\nMetrics:\n{metrics_lines}\n\nResults written to:\n  {out_path}"
+    )
 
 
 if __name__ == "__main__":

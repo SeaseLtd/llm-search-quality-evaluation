@@ -6,7 +6,9 @@ import pytest
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.models import Document
-from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
+from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import (
+    EvaluationDataset,
+)
 from llm_search_quality_evaluation.shared.writers.evaluation_dataset_writer import (
     OUTPUT_FILENAME,
     EvaluationDatasetWriter,
@@ -25,10 +27,18 @@ def populated_datastore() -> DataStore:
     datastore = DataStore(ignore_saved_data=True)
 
     # Add docs
-    datastore.add_document(Document(id="doc1", fields={"title": "title 1", "description": "desc 1"}))
-    datastore.add_document(Document(id="doc2", fields={"title": "title 2", "description": "desc 2"}))
-    datastore.add_document(Document(id="doc3", fields={"title": "title 3", "description": "desc 3"}))
-    datastore.add_document(Document(id="doc4", fields={"title": "title 4", "description": "desc 4"}))
+    datastore.add_document(
+        Document(id="doc1", fields={"title": "title 1", "description": "desc 1"})
+    )
+    datastore.add_document(
+        Document(id="doc2", fields={"title": "title 2", "description": "desc 2"})
+    )
+    datastore.add_document(
+        Document(id="doc3", fields={"title": "title 3", "description": "desc 3"})
+    )
+    datastore.add_document(
+        Document(id="doc4", fields={"title": "title 4", "description": "desc 4"})
+    )
 
     # Add queries and ratings
     q1 = datastore.add_query("test query 1")
@@ -87,7 +97,9 @@ class TestEvaluationDatasetWriter:
         original_queries = populated_datastore.get_queries()
         assert len(data["queries"]) == len(original_queries)
         for original_q in original_queries:
-            matching_q = next((q for q in data["queries"] if q["id"] == original_q.id), None)
+            matching_q = next(
+                (q for q in data["queries"] if q["id"] == original_q.id), None
+            )
             assert matching_q is not None
             assert matching_q["text"] == original_q.text
 
@@ -95,7 +107,9 @@ class TestEvaluationDatasetWriter:
         original_docs = populated_datastore.get_documents()
         assert len(data["documents"]) == len(original_docs)
         for original_doc in original_docs:
-            matching_doc = next((d for d in data["documents"] if d["id"] == original_doc.id), None)
+            matching_doc = next(
+                (d for d in data["documents"] if d["id"] == original_doc.id), None
+            )
             assert matching_doc is not None
             assert matching_doc["fields"] == original_doc.fields
 
@@ -119,7 +133,9 @@ class TestEvaluationDatasetWriter:
         max_score = max((r.score for r in original_ratings), default=1)
         assert data["max_rating_value"] == max_score
 
-    def test_write_with_empty_datastore(self, writer_config: WriterConfig, tmp_path: Path):
+    def test_write_with_empty_datastore(
+        self, writer_config: WriterConfig, tmp_path: Path
+    ):
         """Test writing an empty datastore."""
         output_dir = tmp_path
         writer = EvaluationDatasetWriter(writer_config=writer_config)
@@ -138,7 +154,9 @@ class TestEvaluationDatasetWriter:
         assert data["ratings"] == []
         assert data["max_rating_value"] == 1  # default value
 
-    def test_write_with_various_rating_scores(self, writer_config: WriterConfig, tmp_path: Path):
+    def test_write_with_various_rating_scores(
+        self, writer_config: WriterConfig, tmp_path: Path
+    ):
         """Test that max_rating_value is correctly calculated with various scores."""
         output_dir = tmp_path
         writer = EvaluationDatasetWriter(writer_config=writer_config)

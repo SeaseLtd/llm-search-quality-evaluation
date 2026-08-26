@@ -1,5 +1,4 @@
 from pathlib import Path
-from urllib.parse import urljoin
 import requests
 from pydantic import HttpUrl
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
@@ -41,9 +40,9 @@ class DatafariSearchEngine(BaseSearchEngine):
     def _get_total_hits(
         self, payload: Dict[str, Any], collection_name: Optional[str]
     ) -> int:
-        search_url = urljoin(self.endpoint.encoded_string(), "select")
+        search_url = self.endpoint.encoded_string()
 
-        # Force Solr to return a JSON formatted response
+        # Force datafari to return a JSON formatted response
         payload["wt"] = "json"
         if collection_name:
             payload["collection"] = collection_name
@@ -51,7 +50,7 @@ class DatafariSearchEngine(BaseSearchEngine):
         log.debug("Retrieving all docs to count them")
         log.debug(f"Search url: {search_url}")
         log.debug(
-            f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
+            f"datafari payload (showing payload 500 first chars): {str(payload)[:500]}"
         )
 
         try:
@@ -76,7 +75,7 @@ class DatafariSearchEngine(BaseSearchEngine):
         collection: str | None = None,
     ) -> List[Document]:
         """
-        Fetches a set of documents from Solr for the purpose of query generation.
+        Fetches a set of documents from datafari for the purpose of query generation.
 
         Args:
             documents_filter (Union[None, List[Dict[str, List[str]]]]): Optional filter constraints for fields and their allowed values.
@@ -116,8 +115,8 @@ class DatafariSearchEngine(BaseSearchEngine):
         query_template: Path | str,
         doc_fields: List[str],
         keyword: str = "*:*",
-        collection: str | None = None, 
-        extra_placeholders: Dict[str, str] | None = None
+        extra_placeholders: Dict[str, str] | None = None,
+        collection: str | None = None,
     ) -> List[Document]:
         """
         Executes a search using a query template for evaluation purposes.
@@ -130,13 +129,19 @@ class DatafariSearchEngine(BaseSearchEngine):
         Returns:
             List[Document]: A list of documents matching the query.
         """
-        log.info("Fetching documents (rows) based on query template for query evaluation")
+        log.info(
+            "Fetching documents (rows) based on query template for query evaluation"
+        )
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
-        payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, self.escape(keyword))
-        payload['fl'] = self._unify_fields(doc_fields)
-        payload['collection'] = collection
+        payload: Dict[str, Any] = self._parse_query_template(
+            query_template, extra_placeholders
+        )
+        payload = self._replace_placeholder(
+            payload, self.QUERY_PLACEHOLDER, self.escape(keyword)
+        )
+        payload["fl"] = self._unify_fields(doc_fields)
+        payload["collection"] = collection
 
         return self._search(payload)
 
@@ -145,26 +150,25 @@ class DatafariSearchEngine(BaseSearchEngine):
         payload: Dict[str, Any],
     ) -> List[Document]:
         """
-        Executes a Solr search using a JSON payload and parses the results.
+        Executes a datafari search using a JSON payload and parses the results.
 
         Args:
-            payload (Dict[str, Any]): The JSON payload to send in the POST request to Solr.
+            payload (Dict[str, Any]): The JSON payload to send in the POST request to datafari.
 
         Returns:
             List[Document]: A list of documents formatted as `Document` instances.
         """
 
-        #search_url = urljoin(self.endpoint.encoded_string(), "select")
         search_url = self.endpoint.encoded_string().rstrip("/")
         if self.UNIQUE_KEY not in payload.get("fl", []):
             payload["fl"].append(self.UNIQUE_KEY)
 
-        # Force Solr to return a JSON formatted response
+        # Force datafari to return a JSON formatted response
         payload["wt"] = "json"
 
         log.info(f"Search url: {search_url}")
         log.debug(
-            f"Solr payload (showing payload 500 first chars): {str(payload)[:500]}"
+            f"datafari payload (showing payload 500 first chars): {str(payload)[:500]}"
         )
 
         try:
@@ -187,10 +191,14 @@ class DatafariSearchEngine(BaseSearchEngine):
             result.append(Document(id=doc_id, fields=fields))
         log.info(f"Fetched {len(result)} documents from the engine")
         return result
-    
+
     def _unify_fields(self, doc_fields: List[str]) -> str:
-        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
-        return ','.join(fields)
+        fields = (
+            doc_fields
+            if self.UNIQUE_KEY in doc_fields
+            else doc_fields + [self.UNIQUE_KEY]
+        )
+        return ",".join(fields)
 
     @staticmethod
     def _normalize(value: Any) -> List[str]:

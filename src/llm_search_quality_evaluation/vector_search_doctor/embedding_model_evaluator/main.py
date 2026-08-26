@@ -281,6 +281,20 @@ def main() -> None:
 
     log.info("Computing MTEB Leaderboard comparison metrics...")
 
+    """
+        Moving embeddings writing before MTEB comparison because if the model is not listed in the latest MTEB version, the embeddings are not saved
+    """
+    # --- Write embeddings ---
+    writer = EmbeddingWriter(
+        corpus_path=config.corpus_path,
+        queries_path=config.queries_path,
+        cached=model_with_cache,
+        cache_path=model_with_cache_path,
+        task_name=task_name,
+        batch_size=256,
+    )
+    writer.write(config.embeddings_dest)
+
     # task result is in {output_folder} / {model_name} / {model_revision} / {task_name}.json
     task_result_path: Path = (
         config.output_dest
@@ -294,17 +308,6 @@ def main() -> None:
         config.model_id, config.task_to_evaluate.capitalize()
     )
     _add_mteb_leaderboard_comparison_metrics(task_result_path, mteb_comparison_metrics)
-
-    # --- Write embeddings ---
-    writer = EmbeddingWriter(
-        corpus_path=config.corpus_path,
-        queries_path=config.queries_path,
-        cached=model_with_cache,
-        cache_path=model_with_cache_path,
-        task_name=task_name,
-        batch_size=256,
-    )
-    writer.write(config.embeddings_dest)
 
 
 if __name__ == "__main__":

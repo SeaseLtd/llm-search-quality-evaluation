@@ -4,6 +4,7 @@ End-to-end test: metric correctness with a mocked engine.
 Covers exact pre-computed metric values for a perfect and an imperfect ranking.
 Wiring assertions (keys present, empty-input error) are in test_main.py.
 """
+
 import gzip
 import json
 import types
@@ -13,8 +14,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from llm_search_quality_evaluation.shared.models import Document
-from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator import main as main_mod
+from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import (
+    EvaluationDataset,
+)
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator import (
+    main as main_mod,
+)
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.results import (
     RESULTS_FILENAME,
 )
@@ -91,7 +96,9 @@ def _stub_engine() -> MagicMock:
     return engine
 
 
-def _make_config(tmp_path: Path, dataset_path: Path, output_path: Path, engine_type: str) -> object:
+def _make_config(
+    tmp_path: Path, dataset_path: Path, output_path: Path, engine_type: str
+) -> object:
     query_template = tmp_path / "template.json"
     query_template.write_text('{"query": "$query"}')
     return types.SimpleNamespace(
@@ -127,51 +134,89 @@ class TestEndToEnd:
         engine_type: str,
     ) -> dict:
         config = _make_config(tmp_path, dataset_path, output_path, engine_type)
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine()
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine()),
+        )
         main_mod.main()
         return json.loads((output_path / RESULTS_FILENAME).read_text())
 
     def test_perfect_query_ndcg_is_one(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, e2e_setup: tuple, engine_type: str
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        e2e_setup: tuple,
+        engine_type: str,
     ) -> None:
         dataset_path, output_path = e2e_setup
-        data = self._run_main(monkeypatch, tmp_path, dataset_path, output_path, engine_type)
+        data = self._run_main(
+            monkeypatch, tmp_path, dataset_path, output_path, engine_type
+        )
         assert data["per_query"]["perfect"]["ndcg@2"] == _EXPECTED_PERFECT_NDCG
 
     def test_imperfect_query_ndcg_precomputed(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, e2e_setup: tuple, engine_type: str
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        e2e_setup: tuple,
+        engine_type: str,
     ) -> None:
         dataset_path, output_path = e2e_setup
-        data = self._run_main(monkeypatch, tmp_path, dataset_path, output_path, engine_type)
+        data = self._run_main(
+            monkeypatch, tmp_path, dataset_path, output_path, engine_type
+        )
         assert data["per_query"]["imperfect"]["ndcg@2"] == _EXPECTED_IMPERFECT_NDCG
 
     def test_aggregate_in_unit_interval(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, e2e_setup: tuple, engine_type: str
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        e2e_setup: tuple,
+        engine_type: str,
     ) -> None:
         dataset_path, output_path = e2e_setup
-        data = self._run_main(monkeypatch, tmp_path, dataset_path, output_path, engine_type)
+        data = self._run_main(
+            monkeypatch, tmp_path, dataset_path, output_path, engine_type
+        )
         for metric, value in data["aggregate"].items():
             assert 0.0 <= value <= 1.0, f"{metric}={value} out of [0,1]"
 
     def test_per_query_counts(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, e2e_setup: tuple, engine_type: str
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        e2e_setup: tuple,
+        engine_type: str,
     ) -> None:
         dataset_path, output_path = e2e_setup
-        data = self._run_main(monkeypatch, tmp_path, dataset_path, output_path, engine_type)
+        data = self._run_main(
+            monkeypatch, tmp_path, dataset_path, output_path, engine_type
+        )
         # Both queries: engine returns 2 docs, 2 relevant in ground truth
         for query in ("perfect", "imperfect"):
             assert data["per_query"][query]["num_retrieved"] == 2.0
             assert data["per_query"][query]["num_relevant_total"] == 2.0
 
     def test_relevance_threshold_derived(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, e2e_setup: tuple, engine_type: str
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        e2e_setup: tuple,
+        engine_type: str,
     ) -> None:
         dataset_path, output_path = e2e_setup
-        data = self._run_main(monkeypatch, tmp_path, dataset_path, output_path, engine_type)
+        data = self._run_main(
+            monkeypatch, tmp_path, dataset_path, output_path, engine_type
+        )
         # (4+1)//2 = 2
         assert data["relevance_threshold"] == 2
         assert data["max_rating_value"] == _MAX_RATING
