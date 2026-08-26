@@ -115,8 +115,8 @@ class DatafariSearchEngine(BaseSearchEngine):
         query_template: Path | str,
         doc_fields: List[str],
         keyword: str = "*:*",
-        collection: str | None = None,
         extra_placeholders: Dict[str, str] | None = None,
+        collection: str | None = None,
     ) -> List[Document]:
         """
         Executes a search using a query template for evaluation purposes.

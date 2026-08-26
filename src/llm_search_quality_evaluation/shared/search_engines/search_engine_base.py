@@ -135,6 +135,7 @@ class BaseSearchEngine(ABC):
         query_template: Path | str,
         doc_fields: List[str],
         keyword: str = "*:*",
+        extra_placeholders: Dict[str, str] | None = None,
         collection: Optional[str] = None,
     ) -> List[Document]:
         """Search for documents based on a keyword and a query template to evaluate the system."""
