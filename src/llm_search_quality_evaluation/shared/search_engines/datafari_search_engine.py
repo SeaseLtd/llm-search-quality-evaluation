@@ -1,5 +1,4 @@
 from pathlib import Path
-from urllib.parse import urljoin
 import requests
 from pydantic import HttpUrl
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
