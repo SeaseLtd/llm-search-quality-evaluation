@@ -12,17 +12,21 @@ from llm_search_quality_evaluation.shared.models import Document, Query
 def tmp_db_path(tmp_path: Path) -> Path:
     return tmp_path / "datastore.json"
 
+
 @pytest.fixture
 def ds(tmp_db_path: Path) -> DataStore:
     return DataStore(path=tmp_db_path, ignore_saved_data=True)
+
 
 @pytest.fixture
 def doc_a() -> Document:
     return Document(id="doc-A", fields={"title": "A", "body": "..."})
 
+
 @pytest.fixture
 def doc_b() -> Document:
     return Document(id="doc-B", fields={"title": "B"})
+
 
 @pytest.fixture
 def query_q() -> Query:
@@ -43,18 +47,20 @@ def test_add_and_get_doc__expects__datastore_returns_the_same_document(ds, doc_a
     assert len(ds.get_documents()) == 1
     assert ds.get_document("missing-doc") is None
 
-def test_add_and_get_cartesian_product_docs__expects__datastore_returns_only_doc_a_with_get_cartesian_prod_docs(ds,
-                                                                                                                doc_a,
-                                                                                                                doc_b):
+
+def test_add_and_get_cartesian_product_docs__expects__datastore_returns_only_doc_a_with_get_cartesian_prod_docs(
+    ds, doc_a, doc_b
+):
     doc_a.is_used_to_generate_queries = True
     ds.add_document(doc_a)
     ds.add_document(doc_b)
     assert len(ds.get_documents()) == 2
     assert len(ds.get_cartesian_prod_docs()) == 1
 
-def test_add_and_get_cartesian_product_docs__expects__datastore_returns_nothing_with_get_cartesian_prod_docs(ds,
-                                                                                                                doc_a,
-                                                                                                                doc_b):
+
+def test_add_and_get_cartesian_product_docs__expects__datastore_returns_nothing_with_get_cartesian_prod_docs(
+    ds, doc_a, doc_b
+):
     doc_a.is_used_to_generate_queries = True
     ds.add_document(doc_a)
     doc_a.is_used_to_generate_queries = False
@@ -63,9 +69,10 @@ def test_add_and_get_cartesian_product_docs__expects__datastore_returns_nothing_
     assert len(ds.get_documents()) == 2
     assert len(ds.get_cartesian_prod_docs()) == 0
 
-def test_add_twice_cartesian_product_docs__expects__datastore_returns_only_doc_a_with_get_cartesian_prod_docs(ds,
-                                                                                                              doc_a,
-                                                                                                              doc_b):
+
+def test_add_twice_cartesian_product_docs__expects__datastore_returns_only_doc_a_with_get_cartesian_prod_docs(
+    ds, doc_a, doc_b
+):
     doc_a.is_used_to_generate_queries = True
     ds.add_document(doc_a)
     doc_a.is_used_to_generate_queries = True
@@ -74,13 +81,17 @@ def test_add_twice_cartesian_product_docs__expects__datastore_returns_only_doc_a
     assert len(ds.get_documents()) == 2
     assert len(ds.get_cartesian_prod_docs()) == 1
 
-def test_add_document_duplicate__expects__logs_debug_and_keeps_original(ds, doc_a, caplog):
+
+def test_add_document_duplicate__expects__logs_debug_and_keeps_original(
+    ds, doc_a, caplog
+):
     caplog.set_level(logging.DEBUG)  # Ensure logs are captured (warnings/debug)
     ds.add_document(doc_a)
     assert len(ds.get_documents()) == 1
     ds.add_document(doc_a)
     assert "exists" in caplog.text
     assert len(ds.get_documents()) == 1  # does not overwrite
+
 
 def test_add_and_get_query__expects__datastore_returns_the_same_query(ds, query_q):
     query = ds.add_query(query_q.text)
@@ -89,6 +100,7 @@ def test_add_and_get_query__expects__datastore_returns_the_same_query(ds, query_
     assert ds.get_query(query.id).text == query_q.text
     assert len(ds.get_queries()) == 1
     assert ds.get_query("missing-query") is None
+
 
 def test_create_rating_score__expects__creates_rating_and_indexes(ds, doc_a, query_q):
     query = ds.add_query(query_q.text)
@@ -105,24 +117,33 @@ def test_create_rating_score__expects__creates_rating_and_indexes(ds, doc_a, que
     # Missing query returns empty
     assert _ratings_for_query(ds, "missing-query") == []
 
-def test_create_rating_score__expects__second_call_does_not_update_existing(ds, doc_a, query_q, caplog):
+
+def test_create_rating_score__expects__second_call_does_not_update_existing(
+    ds, doc_a, query_q, caplog
+):
     query = ds.add_query(query_q.text)
     ds.add_document(doc_a)
     rating1 = ds.create_rating_score(query.id, doc_a.id, 1)
     caplog.set_level(logging.DEBUG)
-    rating2 = ds.create_rating_score(query.id, doc_a.id, 4)  # insert-only: does not update
+    rating2 = ds.create_rating_score(
+        query.id, doc_a.id, 4
+    )  # insert-only: does not update
     assert rating1 is rating2  # Should return the exact same object
     assert (query.id, doc_a.id) in ds.rating_by_pair
     assert ds.rating_by_pair[(query.id, doc_a.id)] == rating1
     assert "existing" in caplog.text
 
-def test_create_rating_score__expects__negative_value_is_none_and_logs_error(ds, doc_a, query_q, caplog):
+
+def test_create_rating_score__expects__negative_value_is_none_and_logs_error(
+    ds, doc_a, query_q, caplog
+):
     ds.add_document(doc_a)
     ds.add_query(query_q.text)
     caplog.set_level(logging.DEBUG)
     ret = ds.create_rating_score(query_q.id, doc_a.id, -1)
     assert ret is None
     assert "validation_failed" in caplog.text
+
 
 def test_create_rating_score__expects__logs_warning_for_missing_ids(ds, caplog):
     caplog.set_level(logging.WARNING)
@@ -131,6 +152,7 @@ def test_create_rating_score__expects__logs_warning_for_missing_ids(ds, caplog):
     assert rating.query_id == "q-missing"
     assert rating.doc_id == "d-existing"
     assert "query_not_found" in caplog.text
+
 
 def test_persistence__expects__save_and_load_roundtrip(tmp_db_path, doc_a, query_q):
     ds1 = DataStore(path=tmp_db_path, ignore_saved_data=True)
@@ -148,12 +170,14 @@ def test_persistence__expects__save_and_load_roundtrip(tmp_db_path, doc_a, query
     assert ds2.get_queries()[0].text == query_q.text
     assert ds2.get_ratings()[0].score == 5
 
+
 def test_load_when_file_missing__expects__returns_empty_store(tmp_path):
     path = tmp_path / "no-such.json"
     ds = DataStore(path=path)  # should not raise
     assert ds.get_documents() == []
     assert ds.get_queries() == []
     assert ds.get_ratings() == []
+
 
 def test_add_query__expects__returns_id_for_new_and_duplicate_queries(ds):
     query1 = Query(text="unique text")
@@ -165,16 +189,21 @@ def test_add_query__expects__returns_id_for_new_and_duplicate_queries(ds):
     query2_duplicate = Query(text="unique text")  # Same text, different object/id
     returned_query2 = ds.add_query(query2_duplicate.text)
     assert isinstance(returned_query2, Query)
-    assert returned_query2.id == returned_query1.id  # Should return the same query as before
+    assert (
+        returned_query2.id == returned_query1.id
+    )  # Should return the same query as before
 
-def test_load_with_broken_references__expects__skips_dangling_ratings_and_warns(tmp_db_path, doc_a, query_q, caplog):
+
+def test_load_with_broken_references__expects__skips_dangling_ratings_and_warns(
+    tmp_db_path, doc_a, query_q, caplog
+):
     # Simulate a corrupt file with a rating pointing to a non-existent doc
     corrupt_data = {
         "docs": [],  # doc_a is missing
         "queries": [query_q.model_dump()],
         "ratings": [
             {"id": "r1", "query_id": query_q.id, "doc_id": doc_a.id, "score": 5}
-        ]
+        ],
     }
     tmp_db_path.write_text(json.dumps(corrupt_data))
 
@@ -183,10 +212,13 @@ def test_load_with_broken_references__expects__skips_dangling_ratings_and_warns(
 
     # The rating is skipped because the document is missing, and a warning is logged.
     assert len(ds.get_ratings()) == 0
-    assert 'doc_not_found' in caplog.text
+    assert "doc_not_found" in caplog.text
+
 
 # --- autosave tests ---
-def test_autosave_every_n_updates__expects__saves_on_threshold(tmp_db_path: Path, doc_a: Document):
+def test_autosave_every_n_updates__expects__saves_on_threshold(
+    tmp_db_path: Path, doc_a: Document
+):
     ds = DataStore(path=tmp_db_path, ignore_saved_data=True, autosave_every_n_updates=2)
 
     assert not tmp_db_path.exists()
@@ -202,7 +234,9 @@ def test_autosave_every_n_updates__expects__saves_on_threshold(tmp_db_path: Path
     assert len(ds2.get_queries()) == 1
 
 
-def test_autosave_ignores_duplicates__expects__does_not_save_until_real_update(tmp_db_path: Path, doc_a: Document):
+def test_autosave_ignores_duplicates__expects__does_not_save_until_real_update(
+    tmp_db_path: Path, doc_a: Document
+):
     ds = DataStore(path=tmp_db_path, ignore_saved_data=True, autosave_every_n_updates=2)
 
     ds.add_document(doc_a)  # 1 update
@@ -213,18 +247,20 @@ def test_autosave_ignores_duplicates__expects__does_not_save_until_real_update(t
     assert tmp_db_path.exists()
 
 
-def test_autosave_counts_rating_add__expects__saves_on_threshold(tmp_db_path: Path, doc_a: Document):
+def test_autosave_counts_rating_add__expects__saves_on_threshold(
+    tmp_db_path: Path, doc_a: Document
+):
     ds = DataStore(path=tmp_db_path, ignore_saved_data=True, autosave_every_n_updates=3)
 
-    q = ds.add_query("q1")      # 1
-    ds.add_document(doc_a)       # 2
+    q = ds.add_query("q1")  # 1
+    ds.add_document(doc_a)  # 2
     assert not tmp_db_path.exists()
 
     ds.create_rating_score(q.id, doc_a.id, 1)  # 3 -> triggers autosave
     assert tmp_db_path.exists()
 
 
-# - new test: QUERY DEDUPLICATION 
+# - new test: QUERY DEDUPLICATION
 def test_add_query__expects__dedup_by_whitespace_and_html():
     ds = DataStore(ignore_saved_data=True)
     q1 = ds.add_query("  Hello   World  ")

@@ -12,14 +12,16 @@ def config(resource_folder):
 
 
 def test_good_config__expects__all_parameters_read(config):
-    assert config.query_template == Path('tests/resources/template_solr.json')
+    assert config.query_template == Path("tests/resources/template_solr.json")
     assert config.search_engine_type == "solr"
     assert config.collection_name == "testcore"
     assert config.search_engine_url == HttpUrl("http://localhost:8983/solr/")
-    assert config.search_engine_collection_endpoint == HttpUrl("http://localhost:8983/solr/testcore/")
+    assert config.search_engine_collection_endpoint == HttpUrl(
+        "http://localhost:8983/solr/testcore/"
+    )
     assert config.documents_filter == [
         {"genre": ["horror", "fantasy"]},
-        {"type": ["book"]}
+        {"type": ["book"]},
     ]
     assert config.number_of_docs == 100
     assert config.doc_fields == ["title", "description"]
@@ -77,7 +79,10 @@ def test_mteb_config__expects__successful_load(resource_folder):
     assert mteb_config.output_format == "mteb"
     assert mteb_config.output_destination == Path("output")
 
-def test_missing_both_templates_with_rre__expects__raises_validation_error(resource_folder):
+
+def test_missing_both_templates_with_rre__expects__raises_validation_error(
+    resource_folder,
+):
     file_name = "missing_both_templates.yaml"
     with pytest.raises(ValidationError):
         _ = Config.load(resource_folder / file_name)
@@ -86,16 +91,16 @@ def test_missing_both_templates_with_rre__expects__raises_validation_error(resou
 def test_autosave_valid_positive_int__expects__parsed(tmp_path):
     # Minimal valid config including autosave set to a positive integer
     cfg_text = (
-        "search_engine_type: \"solr\"\n"
-        "collection_name: \"testcore\"\n"
-        "search_engine_url: \"http://localhost:8983/solr/\"\n"
+        'search_engine_type: "solr"\n'
+        'collection_name: "testcore"\n'
+        'search_engine_url: "http://localhost:8983/solr/"\n'
         "number_of_docs: 2\n"
-        "doc_fields: [\"title\"]\n"
+        'doc_fields: ["title"]\n'
         "num_queries_needed: 2\n"
-        "relevance_scale: \"binary\"\n"
-        "llm_configuration_file: \"tests/resources/llm_config.yaml\"\n"
-        "output_format: \"quepid\"\n"
-        "output_destination: \"output\"\n"
+        'relevance_scale: "binary"\n'
+        'llm_configuration_file: "tests/resources/llm_config.yaml"\n'
+        'output_format: "quepid"\n'
+        'output_destination: "output"\n'
         "datastore_autosave_every_n_updates: 50\n"
     )
     cfg_path = tmp_path / "cfg.yaml"
@@ -108,16 +113,16 @@ def test_autosave_valid_positive_int__expects__parsed(tmp_path):
 def test_autosave_invalid_non_positive__expects__raises_validation_error(tmp_path):
     # autosave set to 0 should fail due to gt=0 validation
     cfg_text = (
-        "search_engine_type: \"solr\"\n"
-        "collection_name: \"testcore\"\n"
-        "search_engine_url: \"http://localhost:8983/solr/\"\n"
+        'search_engine_type: "solr"\n'
+        'collection_name: "testcore"\n'
+        'search_engine_url: "http://localhost:8983/solr/"\n'
         "number_of_docs: 2\n"
-        "doc_fields: [\"title\"]\n"
+        'doc_fields: ["title"]\n'
         "num_queries_needed: 2\n"
-        "relevance_scale: \"binary\"\n"
-        "llm_configuration_file: \"tests/resources/llm_config.yaml\"\n"
-        "output_format: \"quepid\"\n"
-        "output_destination: \"output\"\n"
+        'relevance_scale: "binary"\n'
+        'llm_configuration_file: "tests/resources/llm_config.yaml"\n'
+        'output_format: "quepid"\n'
+        'output_destination: "output"\n'
         "datastore_autosave_every_n_updates: 0\n"
     )
     cfg_path = tmp_path / "cfg.yaml"

@@ -4,7 +4,12 @@ import requests
 
 
 class MockResponseOpenSearchEngine:
-    def __init__(self, hits_data: Union[Dict[str, Any], List[Dict[str, Any]]], total_hits: int = 100, status_code: int = 200):
+    def __init__(
+        self,
+        hits_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+        total_hits: int = 100,
+        status_code: int = 200,
+    ):
         if isinstance(hits_data, dict):
             self._hits_data = [hits_data]
         elif isinstance(hits_data, list):
@@ -27,6 +32,6 @@ class MockResponseOpenSearchEngine:
             "hits": {
                 "total": {"value": self.total_hits, "relation": "eq"},
                 "max_score": 1.0,
-                "hits": self._hits_data
+                "hits": self._hits_data,
             }
         }

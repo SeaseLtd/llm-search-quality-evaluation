@@ -4,7 +4,9 @@ import pytest
 from pydantic import FilePath
 from pydantic_core import ValidationError
 
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import Config
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import (
+    Config,
+)
 
 
 @pytest.fixture
@@ -12,7 +14,9 @@ def config(resource_folder) -> Config:
     return Config.load(resource_folder / "valid_mteb_config.yaml")
 
 
-def test_config_with_valid_yaml_file__expects__loads_all_parameters_correctly(config: Config) -> None:
+def test_config_with_valid_yaml_file__expects__loads_all_parameters_correctly(
+    config: Config,
+) -> None:
     assert config.model_id == "sentence-transformers/all-MiniLM-L6-v2"
     assert config.corpus_path == FilePath("tests/resources/corpus.jsonl")
     assert config.queries_path == FilePath("tests/resources/queries.jsonl")
@@ -22,7 +26,9 @@ def test_config_with_valid_yaml_file__expects__loads_all_parameters_correctly(co
     assert config.relevance_scale == "binary"
 
 
-def test_config_with_invalid_file_extension__expects__raises_validation_error(resource_folder) -> None:
+def test_config_with_invalid_file_extension__expects__raises_validation_error(
+    resource_folder,
+) -> None:
     path = resource_folder / "invalid_mteb_config.yaml"
     with pytest.raises(ValidationError):
         _ = Config.load(path)

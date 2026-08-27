@@ -26,11 +26,19 @@ class DataStore:
     - `has_rating_score` is True only if a `Rating` object exists for the pair (query_id, document_id).
     """
 
-    def __init__(self, path: Path = TMP_FILE, ignore_saved_data: bool = False, autosave_every_n_updates: Optional[int] = None):
+    def __init__(
+        self,
+        path: Path = TMP_FILE,
+        ignore_saved_data: bool = False,
+        autosave_every_n_updates: Optional[int] = None,
+    ):
         self.path = path
         # Autosave configuration: when >0, save to disk every N successful mutations
         self._autosave_every_n_updates: Optional[int] = (
-            autosave_every_n_updates if isinstance(autosave_every_n_updates, int) and autosave_every_n_updates > 0 else None
+            autosave_every_n_updates
+            if isinstance(autosave_every_n_updates, int)
+            and autosave_every_n_updates > 0
+            else None
         )
         self._updates_since_last_save: int = 0
 
@@ -39,10 +47,12 @@ class DataStore:
         self.queries: Dict[str, Query] = {}
 
         # Ratings storage
-        self.rating_by_pair: Dict[Tuple[str, str], Rating] = {}    # (query_id, doc_id) → Rating 
+        self.rating_by_pair: Dict[
+            Tuple[str, str], Rating
+        ] = {}  # (query_id, doc_id) → Rating
 
         # Text based deduplication for queries
-        self.query_text_to_query_id: Dict[str, str] = {}           # query_text → query_id 
+        self.query_text_to_query_id: Dict[str, str] = {}  # query_text → query_id
 
         if not ignore_saved_data:
             log.info(f"Loading data from {path}")
@@ -90,7 +100,6 @@ class DataStore:
         """Gets all ratings."""
         return list(self.rating_by_pair.values())
 
-
     # ────────────────────────────────────────────
     # Mutators (all O(1) on average)
     # ────────────────────────────────────────────
@@ -105,12 +114,18 @@ class DataStore:
 
     def add_query(self, query_text_str: str, query_id: Optional[str] = None) -> Query:
         """Adds a new query. If text is cached, returns existing Query. If id is given, it's used."""
-        key = clean_text(query_text_str) # Apply general filtering
+        key = clean_text(query_text_str)  # Apply general filtering
         if existing_id := self.query_text_to_query_id.get(key):
-            log.debug(f"[add_query] exists text='{query_text_str}' key='{key}' existing_id={existing_id}")
+            log.debug(
+                f"[add_query] exists text='{query_text_str}' key='{key}' existing_id={existing_id}"
+            )
             query = self.queries[existing_id]
         else:
-            query = Query(id=query_id, text=query_text_str) if query_id else Query(text=query_text_str)
+            query = (
+                Query(id=query_id, text=query_text_str)
+                if query_id
+                else Query(text=query_text_str)
+            )
             self.queries[query.id] = query
             self.query_text_to_query_id[key] = query.id
             log.debug(f"[add_query] added query_id={query.id}")
@@ -132,7 +147,7 @@ class DataStore:
             log.warning(f"[add_rating] exists q={rating.query_id} d={rating.doc_id}")
             return
 
-        self.rating_by_pair[key] = rating 
+        self.rating_by_pair[key] = rating
         log.debug(f"[add_rating] added q={rating.query_id} d={rating.doc_id}")
         self._count_update_and_maybe_autosave()
 
@@ -142,16 +157,20 @@ class DataStore:
         """Create rating (if not exists) and add via `add_rating`."""
 
         key = (query_id, doc_id)
-        if (existing_rating := self.rating_by_pair.get(key)):
+        if existing_rating := self.rating_by_pair.get(key):
             log.warning(f"[create_rating_score] existing q={query_id} d={doc_id}")
             return existing_rating
 
         try:
-            rating = Rating(doc_id=doc_id, query_id=query_id, score=score, explanation=explanation)
+            rating = Rating(
+                doc_id=doc_id, query_id=query_id, score=score, explanation=explanation
+            )
             self._add_rating(rating)
             return rating
         except ValidationError as e:
-            log.warning(f"[create_rating_score] validation_failed q={query_id} d={doc_id} score={score} error={e}")
+            log.warning(
+                f"[create_rating_score] validation_failed q={query_id} d={doc_id} score={score} error={e}"
+            )
             return None
 
     # ────────────────────────────────────────────
@@ -159,26 +178,28 @@ class DataStore:
     # ────────────────────────────────────────────
     def _count_update_and_maybe_autosave(self) -> None:
         """Increment mutation counter and autosave if threshold reached.
-        
+
         If autosave fails, the counter is not reset to allow retrying on next update.
         """
         if self._autosave_every_n_updates is None:
             return
-        
+
         self._updates_since_last_save += 1
-        
+
         if self._updates_since_last_save >= self._autosave_every_n_updates:
             try:
                 self.save()
-                log.debug(f"[autosave] ok path={self.path} updates={self._updates_since_last_save}")
+                log.debug(
+                    f"[autosave] ok path={self.path} updates={self._updates_since_last_save}"
+                )
                 # OK -> reset counter
-                self._updates_since_last_save = 0  
+                self._updates_since_last_save = 0
             except Exception as e:
                 # Error logged but not raised -> main execution continues without saving
                 log.error(
                     f"[autosave] failed to save {self.path}."
                     f"Will retry. Error: {str(e)}",
-                    exc_info=True
+                    exc_info=True,
                 )
 
     # ────────────────────────────────────────────
@@ -192,10 +213,12 @@ class DataStore:
             "ratings": [r.model_dump() for r in self.rating_by_pair.values()],
         }
         tmp_path = self.path.with_name(self.path.name + f".{uuid4().hex}.tmp")
-        tmp_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding=ENCODING)
+        tmp_path.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding=ENCODING
+        )
         # override previous
         tmp_path.replace(self.path)
-        
+
     def load(self) -> None:
         if not self.path.exists():
             return
@@ -206,7 +229,9 @@ class DataStore:
         try:
             data = json.loads(self.path.read_text(encoding=ENCODING))
         except json.JSONDecodeError as e:
-            log.warning(f"Could not read datastore {self.path} (JSON). Starting clean. Error: {e}")
+            log.warning(
+                f"Could not read datastore {self.path} (JSON). Starting clean. Error: {e}"
+            )
             return
 
         # docs
@@ -219,8 +244,12 @@ class DataStore:
         # queries
         for query_as_dict in data.get("queries", []):
             try:
-                tmp_query = Query.model_validate(query_as_dict)                # Create a new tmp query with loaded dict 
-                self.add_query(query_text_str=tmp_query.text, query_id=tmp_query.id) # Pass (text, ID) values to keep ID consistent
+                tmp_query = Query.model_validate(
+                    query_as_dict
+                )  # Create a new tmp query with loaded dict
+                self.add_query(
+                    query_text_str=tmp_query.text, query_id=tmp_query.id
+                )  # Pass (text, ID) values to keep ID consistent
             except ValidationError as e:
                 log.warning(f"[load] skip_query_invalid data={query_as_dict} error={e}")
 
@@ -230,7 +259,9 @@ class DataStore:
                 robj = Rating.model_validate(rating_as_dict)
                 self._add_rating(robj)
             except ValidationError as e:
-                log.warning(f"[load] skip_rating_invalid data={rating_as_dict} error={e}")
+                log.warning(
+                    f"[load] skip_rating_invalid data={rating_as_dict} error={e}"
+                )
 
     def _clear_all_data(self) -> None:
         """Reset state."""
@@ -238,7 +269,6 @@ class DataStore:
         self.queries.clear()
         self.rating_by_pair.clear()
         self.query_text_to_query_id.clear()
-
 
     def export_all_records_with_explanation(self, output_path: str | Path) -> None:
         """Export (query_text, doc_id, rating, explanation) to JSON."""
@@ -248,12 +278,14 @@ class DataStore:
             query_obj = self.queries.get(rating_obj.query_id)
             if not query_obj:
                 continue
-            records.append({
-                "query": query_obj.text,
-                "doc_id": rating_obj.doc_id,
-                "rating": rating_obj.score,
-                "explanation": rating_obj.explanation or ""
-            })
+            records.append(
+                {
+                    "query": query_obj.text,
+                    "doc_id": rating_obj.doc_id,
+                    "rating": rating_obj.score,
+                    "explanation": rating_obj.explanation or "",
+                }
+            )
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -6,17 +6,20 @@ import pytest
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.models import Query, Document
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
-from llm_search_quality_evaluation.shared.writers.rre_writer import RreWriter, RRE_OUTPUT_FILENAME
+from llm_search_quality_evaluation.shared.writers.rre_writer import (
+    RreWriter,
+    RRE_OUTPUT_FILENAME,
+)
 
 
 @pytest.fixture
 def writer_config():
     return WriterConfig(
-        output_format='rre',
-        index='testcore',
-        id_field='id',
-        query_template='only_q.json',
-        query_placeholder='$query',
+        output_format="rre",
+        index="testcore",
+        id_field="id",
+        query_template="only_q.json",
+        query_placeholder="$query",
     )
 
 
@@ -46,7 +49,9 @@ def populated_datastore() -> DataStore:
 
 
 class TestRreWriter:
-    def test_rre_file_successfully_written(self, writer_config, populated_datastore, tmp_path: Path):
+    def test_rre_file_successfully_written(
+        self, writer_config, populated_datastore, tmp_path: Path
+    ):
         output_file = tmp_path / RRE_OUTPUT_FILENAME
         writer = RreWriter(writer_config)
 
@@ -54,7 +59,7 @@ class TestRreWriter:
 
         assert output_file.exists()
 
-        with open(output_file, 'r', newline='') as jsonfile:
+        with open(output_file, "r", newline="") as jsonfile:
             data = json.load(jsonfile)
             assert data["index"] == "testcore"
             assert data["id_field"] == "id"
@@ -85,7 +90,7 @@ class TestRreWriter:
         writer.write(tmp_path, ds)
 
         assert output_file.exists()
-        with open(output_file, 'r') as f:
+        with open(output_file, "r") as f:
             data = json.load(f)
             assert data["index"] == "testcore"
             assert data["id_field"] == "id"
@@ -104,7 +109,7 @@ class TestRreWriter:
 
         writer.write(tmp_path, ds)
 
-        with open(output_file, 'r') as f:
+        with open(output_file, "r") as f:
             data = json.load(f)
             assert len(data["query_groups"]) == 1
             assert data["query_groups"][0]["name"] == q_with_rating.text

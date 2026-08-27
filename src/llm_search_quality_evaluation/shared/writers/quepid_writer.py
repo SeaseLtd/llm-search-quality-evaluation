@@ -17,7 +17,9 @@ class QuepidWriter(AbstractWriter):
     The format is: query, docid, rating
     """
 
-    def _get_queries_and_ratings(self, datastore: DataStore) -> List[Tuple[str, str, int]]:
+    def _get_queries_and_ratings(
+        self, datastore: DataStore
+    ) -> List[Tuple[str, str, int]]:
         """Helper to extract (query_text, doc_id, rating) tuples from the datastore."""
         result: List[Tuple[str, str, int]] = []
         for rating_obj in datastore.get_ratings():
@@ -33,11 +35,13 @@ class QuepidWriter(AbstractWriter):
         output_path = Path(output_path) / QUEPID_OUTPUT_FILENAME
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+        with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['query', 'docid', 'rating'])
+            writer.writerow(["query", "docid", "rating"])
 
             rated_pairs = self._get_queries_and_ratings(datastore)
             for query_text, doc_id, rating in rated_pairs:
                 writer.writerow([query_text, doc_id, rating])
-            log.info(f"Documents, queries and their ratings have been written to {str(output_path)}")
+            log.info(
+                f"Documents, queries and their ratings have been written to {str(output_path)}"
+            )

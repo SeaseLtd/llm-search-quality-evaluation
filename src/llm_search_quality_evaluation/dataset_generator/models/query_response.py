@@ -1,10 +1,12 @@
 import json
 from typing import List
 
+
 class LLMQueryResponse:
     """
     Parses and validates a JSON response containing a list of queries.
     """
+
     _queries: List[str]
 
     def __init__(self, response_content: str):
@@ -29,7 +31,9 @@ class LLMQueryResponse:
             raise ValueError("All items in `response_content` must be strings.")
 
         if any(not item.strip() for item in parsed_content):
-            raise ValueError("Items in `response_content` must not be empty or only whitespace.")
+            raise ValueError(
+                "Items in `response_content` must not be empty or only whitespace."
+            )
 
         self._queries = parsed_content
 

@@ -23,7 +23,9 @@ def write_results(
     for text, metrics in result.per_query.items():
         num_retrieved = float(len(run.get(text, {})))
         num_relevant_total = float(
-            sum(1 for s in qrels.get(text, {}).values() if s >= meta.relevance_threshold)
+            sum(
+                1 for s in qrels.get(text, {}).values() if s >= meta.relevance_threshold
+            )
         )
         per_query[text] = {
             **metrics,

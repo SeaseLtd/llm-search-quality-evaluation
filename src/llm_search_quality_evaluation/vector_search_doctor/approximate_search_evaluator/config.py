@@ -6,7 +6,14 @@ from typing import Optional, Literal
 from urllib.parse import urljoin
 
 import yaml
-from pydantic import BaseModel, Field, FilePath, HttpUrl, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    FilePath,
+    HttpUrl,
+    field_validator,
+    model_validator,
+)
 
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.metrics import (
     DEFAULT_METRICS,
@@ -21,7 +28,7 @@ class Config(BaseModel):
         ...,
         description="Path to a query template file with a placeholder for keywords.",
     )
-    search_engine_type: Literal["solr", "elasticsearch", "opensearch"]
+    search_engine_type: Literal["solr", "elasticsearch", "opensearch", "datafari"]
     collection_name: str = Field(..., description="Name of the index/collection.")
     search_engine_url: HttpUrl = Field(..., description="Base search engine URL.")
     id_field: Optional[str] = Field(None, description="ID field for the unique key.")
@@ -57,9 +64,15 @@ class Config(BaseModel):
 
     @property
     def search_engine_collection_endpoint(self) -> HttpUrl:
-        """Base URL joined with the collection name."""
+        """Return the endpoint used by the search engine."""
+        if self.search_engine_type == "datafari":
+            return self.search_engine_url
+
         return HttpUrl(
-            urljoin(self.search_engine_url.encoded_string() + "/", self.collection_name + "/")
+            urljoin(
+                self.search_engine_url.encoded_string() + "/",
+                self.collection_name + "/",
+            )
         )
 
     @field_validator("metrics")
@@ -85,5 +98,7 @@ class Config(BaseModel):
     def load(cls, config_path: str) -> "Config":
         with open(config_path, "r") as f:
             raw_config = yaml.safe_load(f)
-            log.debug("Approximate Search Evaluator configuration file loaded successfully.")
+            log.debug(
+                "Approximate Search Evaluator configuration file loaded successfully."
+            )
         return cls(**raw_config)

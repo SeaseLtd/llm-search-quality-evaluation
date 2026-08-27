@@ -11,9 +11,11 @@ log = logging.getLogger(__name__)
 
 
 class LLMConfig(BaseModel):
-    name: Literal['openai', 'gemini']
+    name: Literal["openai", "gemini"]
     model: str
-    reasoning_effort: Optional[str] = Field(default=None, description="The reasoning effort of the model")
+    reasoning_effort: Optional[str] = Field(
+        default=None, description="The reasoning effort of the model"
+    )
     api_key_env: Optional[str] = None
 
     @model_validator(mode="after")
@@ -30,7 +32,6 @@ class LLMConfig(BaseModel):
                 self.reasoning_effort = default_effort_mode
 
         return self
-
 
     @classmethod
     def load(cls, path: str | Path = "llm_config.yaml") -> LLMConfig:

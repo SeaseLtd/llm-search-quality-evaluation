@@ -29,11 +29,13 @@ class MtebWriter(AbstractWriter):
                 doc_id = str(doc.id)
                 fields = doc.fields
                 title = _to_string(fields.get("title"))
-                text = join_fields_as_text(fields=fields, exclude={'id', 'title'})
+                text = join_fields_as_text(fields=fields, exclude={"id", "title"})
 
                 row = {"id": doc_id, "title": title, "text": text}
                 file.write(json.dumps(row, ensure_ascii=False) + "\n")
-            log.info(f"Wrote {len(datastore.get_documents())} corpus records to {str(corpus_path)}")
+            log.info(
+                f"Wrote {len(datastore.get_documents())} corpus records to {str(corpus_path)}"
+            )
 
     def _write_queries(self, queries_path: Path, datastore: DataStore) -> None:
         """
@@ -44,7 +46,9 @@ class MtebWriter(AbstractWriter):
             for query in datastore.get_queries():
                 row = {"id": query.id, "text": query.text}
                 file.write(json.dumps(row, ensure_ascii=False) + "\n")
-            log.info(f"Wrote {len(datastore.get_queries())} queries to {str(queries_path)}")
+            log.info(
+                f"Wrote {len(datastore.get_queries())} queries to {str(queries_path)}"
+            )
 
     def _write_candidates(self, candidates_path: Path, datastore: DataStore) -> None:
         """
@@ -53,14 +57,20 @@ class MtebWriter(AbstractWriter):
         """
         with candidates_path.open("w", encoding="utf-8") as file:
             for rating in datastore.get_ratings():
-                row = {"query_id": rating.query_id, "doc_id": rating.doc_id, "rating": rating.score}
+                row = {
+                    "query_id": rating.query_id,
+                    "doc_id": rating.doc_id,
+                    "rating": rating.score,
+                }
                 file.write(json.dumps(row, ensure_ascii=False) + "\n")
-            log.info(f"Wrote {len(datastore.get_ratings())} candidates to {str(candidates_path)}")
+            log.info(
+                f"Wrote {len(datastore.get_ratings())} candidates to {str(candidates_path)}"
+            )
 
     def write(self, output_path: str | Path, datastore: DataStore) -> None:
         """
         Write corpus, queries, and candidates JSONL files for MTEB.
-        
+
         Args:
             output_path: Directory where the MTEB files will be written
             datastore: DataStore containing the data to write

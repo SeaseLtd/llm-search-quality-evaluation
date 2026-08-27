@@ -24,4 +24,3 @@ output_dest: "resources"
 
 # (Optional) Path to write mteb document and query embeddings, if not given it will be written to resources/embeddings dir
 embeddings_dest: "resources/embeddings"
-

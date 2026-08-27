@@ -1,10 +1,21 @@
 from typing import Dict, Type
 from pydantic import HttpUrl
 
-from llm_search_quality_evaluation.shared.search_engines.opensearch_engine import OpenSearchEngine
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
-from llm_search_quality_evaluation.shared.search_engines.solr_search_engine import SolrSearchEngine
-from llm_search_quality_evaluation.shared.search_engines.elasticsearch_search_engine import ElasticsearchSearchEngine
+from llm_search_quality_evaluation.shared.search_engines.opensearch_engine import (
+    OpenSearchEngine,
+)
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
+    BaseSearchEngine,
+)
+from llm_search_quality_evaluation.shared.search_engines.solr_search_engine import (
+    SolrSearchEngine,
+)
+from llm_search_quality_evaluation.shared.search_engines.elasticsearch_search_engine import (
+    ElasticsearchSearchEngine,
+)
+from llm_search_quality_evaluation.shared.search_engines.datafari_search_engine import (
+    DatafariSearchEngine,
+)
 
 import logging
 
@@ -15,7 +26,8 @@ class SearchEngineFactory:
     SEARCH_ENGINE_REGISTRY: Dict[str, Type[BaseSearchEngine]] = {
         "solr": SolrSearchEngine,
         "opensearch": OpenSearchEngine,
-        "elasticsearch": ElasticsearchSearchEngine
+        "elasticsearch": ElasticsearchSearchEngine,
+        "datafari": DatafariSearchEngine,  # adding Datafari to the registry
     }
 
     @classmethod
@@ -23,5 +35,7 @@ class SearchEngineFactory:
         if search_engine_type not in cls.SEARCH_ENGINE_REGISTRY:
             log.error("Unsupported search engine requested: %s", search_engine_type)
             raise ValueError(f"Unsupported search engine: {search_engine_type}")
-        log.info("Searching in %s at endpoint : %s", search_engine_type.upper(), endpoint)
+        log.info(
+            "Searching in %s at endpoint : %s", search_engine_type.upper(), endpoint
+        )
         return cls.SEARCH_ENGINE_REGISTRY[search_engine_type](endpoint)

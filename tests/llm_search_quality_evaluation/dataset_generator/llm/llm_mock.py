@@ -36,7 +36,9 @@ class FakeChatModelAdapter(BaseChatModel):
     def _llm_type(self) -> str:
         return "fake_adapter"
 
-    def _generate(self, messages: List, stop: Optional[List[str]] = None, **kwargs) -> ChatResult:
+    def _generate(
+        self, messages: List, stop: Optional[List[str]] = None, **kwargs
+    ) -> ChatResult:
         raise NotImplementedError("_generate is not used in the test")
 
     def with_structured_output(self, schema: type[BaseModel]):

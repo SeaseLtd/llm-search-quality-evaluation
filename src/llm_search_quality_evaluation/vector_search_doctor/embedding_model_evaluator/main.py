@@ -26,13 +26,20 @@ from mteb.overview import TASKS_REGISTRY
 from packaging.version import InvalidVersion as _InvalidVersion
 from packaging.version import Version as _Version
 
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import Config
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import (
+    Config,
+)
 from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks import (  # noqa: F401 (tasks must be imported to register)
     CustomRerankingTask,
     CustomRetrievalTask,
 )
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import EmbeddingWriter
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import TASKS_NAME_MAPPING, CACHE_PATH
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import (
+    EmbeddingWriter,
+)
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import (
+    TASKS_NAME_MAPPING,
+    CACHE_PATH,
+)
 from llm_search_quality_evaluation.shared.logger import setup_logging  # type: ignore[import]
 
 log = logging.getLogger(__name__)
@@ -41,17 +48,23 @@ CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Embedding Model Evaluator (MTEB, in-memory).")
+    parser = argparse.ArgumentParser(
+        description="Embedding Model Evaluator (MTEB, in-memory)."
+    )
     parser.add_argument(
         "--config",
         type=str,
-        help='Config file path to use for the application [default: '
-             '"examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml"]',
+        help="Config file path to use for the application [default: "
+        '"examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml"]',
         required=False,
         default="examples/configs/vector_search_doctor/embedding_model_evaluator/embedding_model_evaluator_config.yaml",
     )
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Activate debug mode for logging [default: False]')
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Activate debug mode for logging [default: False]",
+    )
 
     return parser.parse_args()
 
@@ -79,7 +92,9 @@ def _build_task(task_name: str, dataset_name: str, split: str) -> Any:
         return task
 
 
-def _add_mteb_leaderboard_comparison_metrics(file_path: Path, mteb_comparison_metrics: dict) -> None:
+def _add_mteb_leaderboard_comparison_metrics(
+    file_path: Path, mteb_comparison_metrics: dict
+) -> None:
     """
     1. Read from custom task result json file (file_path)
     2. Get custom task main_score
@@ -102,10 +117,14 @@ def _add_mteb_leaderboard_comparison_metrics(file_path: Path, mteb_comparison_me
     top_avg_main_score = mteb_comparison_metrics["top_model_avg_main_score"]
     top_model_name = mteb_comparison_metrics["top_model"]
     user_model_name = mteb_comparison_metrics["user_model"]
-    user_model_avg_main_score = mteb_comparison_metrics["user_model_mteb_avg_main_score"]
+    user_model_avg_main_score = mteb_comparison_metrics[
+        "user_model_mteb_avg_main_score"
+    ]
 
-    model_main_score_diff = (f"Your model's main_score on custom task main_score={user_model_main_score:.2f} vs. "
-                             f"MTEB leaderboard shown avg_main_score={user_model_avg_main_score:.2f}")
+    model_main_score_diff = (
+        f"Your model's main_score on custom task main_score={user_model_main_score:.2f} vs. "
+        f"MTEB leaderboard shown avg_main_score={user_model_avg_main_score:.2f}"
+    )
     mteb_comparison_metrics["user_model_custom_task_main_score"] = user_model_main_score
     mteb_comparison_metrics["model_main_score_diff"] = model_main_score_diff
 
@@ -116,7 +135,9 @@ def _add_mteb_leaderboard_comparison_metrics(file_path: Path, mteb_comparison_me
         # Calculate how much worse (in %) user model is compared to the top model
         diff_percent = (diff / top_avg_main_score) * 100
         if diff_percent > threshold_percent:
-            log.debug(f"Model performance exceeded threshold={threshold_percent}%, warning added to custom task result")
+            log.debug(
+                f"Model performance exceeded threshold={threshold_percent}%, warning added to custom task result"
+            )
             warning = f"Your model={user_model_name} is {diff_percent:.2f}% worse than the top model={top_model_name}."
             mteb_comparison_metrics["warning"] = warning
 
@@ -167,7 +188,10 @@ def compute_mteb_leaderboard_comparison(model_name: str, task_type: str) -> dict
         count = 0
         for task_obj in tasks:
             task_name = task_obj.metadata.name
-            task_result = next((res for res in model_res.task_results if res.task_name == task_name), None)
+            task_result = next(
+                (res for res in model_res.task_results if res.task_name == task_name),
+                None,
+            )
             if task_result:
                 main_score = task_result.get_score()
                 if main_score <= 1.0:  # in case if task's main_score is in [0, 1] ratio
@@ -193,7 +217,7 @@ def compute_mteb_leaderboard_comparison(model_name: str, task_type: str) -> dict
         "top_model": top_model_name,
         "top_model_avg_main_score": top_avg_main_score,
         "user_model": model_name,
-        "user_model_mteb_avg_main_score": user_avg_main_score
+        "user_model_mteb_avg_main_score": user_avg_main_score,
     }
 
 
@@ -203,8 +227,13 @@ def main() -> None:
     config: Config = Config.load(args.config)
 
     # --- Sanity logs (explicit & helpful) ---
-    log.info("MTEB run → task=%s | dataset=%s | split=%s | model=%s",
-             config.task_to_evaluate, config.dataset_name, config.split, config.model_id)
+    log.info(
+        "MTEB run → task=%s | dataset=%s | split=%s | model=%s",
+        config.task_to_evaluate,
+        config.dataset_name,
+        config.split,
+        config.model_id,
+    )
 
     # --- Model + caching wrapper ---
     model = mteb.get_model(config.model_id, trust_remote_code=True)
@@ -214,7 +243,9 @@ def main() -> None:
         raise ValueError("Custom task name is not defined.")
 
     if config.output_dest is None:
-        raise ValueError("config.output_dest is not set, default_dir must be `resources`")
+        raise ValueError(
+            "config.output_dest is not set, default_dir must be `resources`"
+        )
 
     model_name_additional_path = config.model_id.replace("/", "__").replace(" ", "_")
     model_with_cache_path = CACHE_PATH / model_name_additional_path
@@ -250,15 +281,9 @@ def main() -> None:
 
     log.info("Computing MTEB Leaderboard comparison metrics...")
 
-    # task result is in {output_folder} / {model_name} / {model_revision} / {task_name}.json
-    task_result_path: Path = (config.output_dest / model_name_additional_path /
-                              mteb.get_model_meta(config.model_id).revision / f"{task_name}.json")
-
-    # --- Compute MTEB Leaderboard model comparison and add them to the custom task result file ---
-    mteb_comparison_metrics: dict = compute_mteb_leaderboard_comparison(config.model_id,
-                                                                        config.task_to_evaluate.capitalize())
-    _add_mteb_leaderboard_comparison_metrics(task_result_path, mteb_comparison_metrics)
-
+    """
+        Moving embeddings writing before MTEB comparison because if the model is not listed in the latest MTEB version, the embeddings are not saved
+    """
     # --- Write embeddings ---
     writer = EmbeddingWriter(
         corpus_path=config.corpus_path,
@@ -269,6 +294,20 @@ def main() -> None:
         batch_size=256,
     )
     writer.write(config.embeddings_dest)
+
+    # task result is in {output_folder} / {model_name} / {model_revision} / {task_name}.json
+    task_result_path: Path = (
+        config.output_dest
+        / model_name_additional_path
+        / mteb.get_model_meta(config.model_id).revision
+        / f"{task_name}.json"
+    )
+
+    # --- Compute MTEB Leaderboard model comparison and add them to the custom task result file ---
+    mteb_comparison_metrics: dict = compute_mteb_leaderboard_comparison(
+        config.model_id, config.task_to_evaluate.capitalize()
+    )
+    _add_mteb_leaderboard_comparison_metrics(task_result_path, mteb_comparison_metrics)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ wheels/
 
 # macOS metadata files
 ../.DS_Store
+.DS_Store
 
 # Virtual environments
 .env
@@ -18,6 +19,8 @@ wheels/
 output/
 /resources*/
 **/tmp
+configs_*
+
 
 # Docker
 **/volumes/
@@ -27,5 +30,11 @@ output/
 **/.venv
 **/.mypy_cache
 
-# JetBrains IDE folder
+#Results folders
 .idea/
+/resources
+/results
+*cache*
+
+solr-evaluator/
+datafari-evaluator/

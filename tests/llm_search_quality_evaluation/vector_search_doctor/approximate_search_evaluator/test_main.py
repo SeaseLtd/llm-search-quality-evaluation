@@ -8,8 +8,12 @@ import jsonlines
 import pytest
 
 from llm_search_quality_evaluation.shared.models import Document
-from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator import main as main_mod
+from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import (
+    EvaluationDataset,
+)
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator import (
+    main as main_mod,
+)
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.results import (
     RESULTS_FILENAME,
 )
@@ -25,7 +29,9 @@ def _make_dataset(
     max_rating_value: int = 4,
 ) -> EvaluationDataset:
     queries = [{"id": f"q{i}", "text": f"query {i}"} for i in range(num_queries)]
-    documents = [{"id": f"d{i}", "fields": {"title": [f"doc {i}"]}} for i in range(num_queries)]
+    documents = [
+        {"id": f"d{i}", "fields": {"title": [f"doc {i}"]}} for i in range(num_queries)
+    ]
     ratings = [
         {"query_id": f"q{i}", "doc_id": f"d{i}", "score": max_rating_value}
         for i in range(num_queries)
@@ -78,44 +84,75 @@ def _make_config(
 
 
 class TestMainOrchestration:
-    def test_main_writes_results_file(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_main_writes_results_file(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         dataset = _make_dataset(num_queries=2)
         dataset_path = tmp_path / "evaluation_dataset.json.gz"
         _write_dataset(dataset_path, dataset)
         output_path = tmp_path / "output"
         config = _make_config(tmp_path, dataset_path, output_path)
 
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine(2)
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine(2)),
+        )
 
         main_mod.main()
 
         assert (output_path / RESULTS_FILENAME).exists()
 
-    def test_main_results_have_expected_keys(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_main_results_have_expected_keys(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         dataset = _make_dataset(num_queries=2, max_rating_value=4)
         dataset_path = tmp_path / "evaluation_dataset.json.gz"
         _write_dataset(dataset_path, dataset)
         output_path = tmp_path / "output"
         config = _make_config(tmp_path, dataset_path, output_path)
 
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine(2)
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine(2)),
+        )
 
         main_mod.main()
 
         data = json.loads((output_path / RESULTS_FILENAME).read_text())
-        for key in ("search_engine", "query_template", "top_k", "max_rating_value",
-                    "relevance_threshold", "num_queries", "metrics", "aggregate", "per_query"):
+        for key in (
+            "search_engine",
+            "query_template",
+            "top_k",
+            "max_rating_value",
+            "relevance_threshold",
+            "num_queries",
+            "metrics",
+            "aggregate",
+            "per_query",
+        ):
             assert key in data, f"missing key: {key}"
 
-    def test_main_derived_relevance_threshold(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_main_derived_relevance_threshold(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         # max_rating_value=4 → threshold = (4+1)//2 = 2
         dataset = _make_dataset(num_queries=2, max_rating_value=4)
         dataset_path = tmp_path / "evaluation_dataset.json.gz"
@@ -123,11 +160,19 @@ class TestMainOrchestration:
         output_path = tmp_path / "output"
         config = _make_config(tmp_path, dataset_path, output_path)
 
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine(2)
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine(2)),
+        )
 
         main_mod.main()
 
@@ -135,25 +180,39 @@ class TestMainOrchestration:
         assert data["max_rating_value"] == 4
         assert data["relevance_threshold"] == 2
 
-    def test_main_empty_dataset_exits_nonzero(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_main_empty_dataset_exits_nonzero(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         # Dataset with no queries, no ratings
-        empty_dataset = EvaluationDataset(queries=[], documents=[], ratings=[], max_rating_value=4)
+        empty_dataset = EvaluationDataset(
+            queries=[], documents=[], ratings=[], max_rating_value=4
+        )
         dataset_path = tmp_path / "evaluation_dataset.json.gz"
         _write_dataset(dataset_path, empty_dataset)
         output_path = tmp_path / "output"
         config = _make_config(tmp_path, dataset_path, output_path)
 
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine(0)
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine(0)),
+        )
 
         with pytest.raises(SystemExit) as exc_info:
             main_mod.main()
         assert exc_info.value.code != 0
 
-    def test_main_vector_template_without_embeddings_file_raises(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_main_vector_template_without_embeddings_file_raises(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         dataset = _make_dataset(num_queries=2)
         dataset_path = tmp_path / "evaluation_dataset.json.gz"
         _write_dataset(dataset_path, dataset)
@@ -165,16 +224,28 @@ class TestMainOrchestration:
             template_text='{"q": "{!knn f=vector topK=10}$vector"}',
         )
 
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine(2)
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine(2)),
+        )
 
-        with pytest.raises(ValueError, match=r"requires \$vector, but embeddings_file is not set"):
+        with pytest.raises(
+            ValueError, match=r"requires \$vector, but embeddings_file is not set"
+        ):
             main_mod.main()
 
-    def test_main_vector_template_with_missing_embeddings_raises(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_main_vector_template_with_missing_embeddings_raises(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         dataset = _make_dataset(num_queries=2)
         dataset_path = tmp_path / "evaluation_dataset.json.gz"
         _write_dataset(dataset_path, dataset)
@@ -192,11 +263,21 @@ class TestMainOrchestration:
             embeddings_file=embeddings_file,
         )
 
-        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
-        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
-        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(
-            build=lambda **_: _stub_engine(2)
-        ))
+        monkeypatch.setattr(
+            main_mod, "Config", types.SimpleNamespace(load=lambda _: config)
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "_parse_args",
+            lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+        )
+        monkeypatch.setattr(
+            main_mod,
+            "SearchEngineFactory",
+            types.SimpleNamespace(build=lambda **_: _stub_engine(2)),
+        )
 
-        with pytest.raises(ValueError, match=r"Missing \$vector values for 1 query\(s\): 'query 1'"):
+        with pytest.raises(
+            ValueError, match=r"Missing \$vector values for 1 query\(s\): 'query 1'"
+        ):
             main_mod.main()

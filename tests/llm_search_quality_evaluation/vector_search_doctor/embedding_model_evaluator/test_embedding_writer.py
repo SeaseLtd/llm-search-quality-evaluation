@@ -6,12 +6,16 @@ import jsonlines
 import numpy as np
 from mteb.models.cache_wrapper import CachedEmbeddingWrapper
 
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import EmbeddingWriter
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import TASKS_NAME_MAPPING
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import (
+    EmbeddingWriter,
+)
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import (
+    TASKS_NAME_MAPPING,
+)
 
 
 def _create_fake_cache_wrapper(
-    vectors: Sequence[Sequence[float] | np.ndarray]
+    vectors: Sequence[Sequence[float] | np.ndarray],
 ) -> CachedEmbeddingWrapper:
     cached: CachedEmbeddingWrapper = create_autospec(
         CachedEmbeddingWrapper, instance=True
@@ -32,23 +36,18 @@ def _create_fake_cache_wrapper(
 
 
 def test_embeddings_writer_with_valid_inputs__expects__creates_jsonl_files_with_correct_embeddings(
-        tmp_path: Path,
-        resource_folder
+    tmp_path: Path, resource_folder
 ) -> None:
     doc_vectors = [[0.1, 0.2, 0.3]]
-    cached_doc = _create_fake_cache_wrapper(
-        vectors=doc_vectors
-    )
+    cached_doc = _create_fake_cache_wrapper(vectors=doc_vectors)
     query_vectors = [[1.0, 1.1, 1.2]]
-    cached_query = _create_fake_cache_wrapper(
-        vectors=query_vectors
-    )
+    cached_query = _create_fake_cache_wrapper(vectors=query_vectors)
 
     embeddings_dir = tmp_path / "output" / "embeddings"
 
     writer = EmbeddingWriter(
-        corpus_path= resource_folder / "corpus.jsonl",
-        queries_path= resource_folder / "queries.jsonl",
+        corpus_path=resource_folder / "corpus.jsonl",
+        queries_path=resource_folder / "queries.jsonl",
         cached=cached_doc,
         cache_path=tmp_path / "cache",
         task_name=TASKS_NAME_MAPPING["retrieval"],
@@ -66,8 +65,8 @@ def test_embeddings_writer_with_valid_inputs__expects__creates_jsonl_files_with_
 
     # recreating again because of fake cached embedding wrapper for queries and corpus vectors
     writer = EmbeddingWriter(
-        corpus_path= resource_folder / "corpus.jsonl",
-        queries_path= resource_folder / "queries.jsonl",
+        corpus_path=resource_folder / "corpus.jsonl",
+        queries_path=resource_folder / "queries.jsonl",
         cached=cached_query,
         cache_path=tmp_path / "cache",
         task_name=TASKS_NAME_MAPPING["retrieval"],
@@ -81,4 +80,3 @@ def test_embeddings_writer_with_valid_inputs__expects__creates_jsonl_files_with_
     with jsonlines.open(queries_file) as r:
         queries = list(r)
     assert queries == [{"id": "query1", "vector": [1.0, 1.1, 1.2]}]
-

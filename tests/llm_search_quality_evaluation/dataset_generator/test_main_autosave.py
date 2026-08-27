@@ -15,11 +15,13 @@ class DummyWriter:
 def test_main_passes_autosave_option_to_datastore(monkeypatch, tmp_path: Path):
     # Prepare a minimal valid LLM config file (so Config validation can pass if needed)
     llm_cfg = tmp_path / "llm_cfg.yaml"
-    llm_cfg.write_text("""
+    llm_cfg.write_text(
+        """
 name: mock
 model: mock-model
 max_tokens: 16
-""".strip())
+""".strip()
+    )
 
     # Build a valid Config object programmatically
     cfg = Config(
@@ -47,21 +49,47 @@ max_tokens: 16
     )
 
     # Patch Config.load to return our in-memory cfg (bypass reading from disk)
-    monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _path: cfg))
+    monkeypatch.setattr(
+        main_mod, "Config", types.SimpleNamespace(load=lambda _path: cfg)
+    )
 
     # Patch parse_args to avoid CLI dependency
-    monkeypatch.setattr(main_mod, "parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
+    monkeypatch.setattr(
+        main_mod,
+        "parse_args",
+        lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False),
+    )
 
     # Patch factories to avoid network / heavy dependencies
-    monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(build=lambda **kwargs: object()))
-    monkeypatch.setattr(main_mod, "LLMConfig", types.SimpleNamespace(load=lambda _path: object()))
-    monkeypatch.setattr(main_mod, "LLMServiceFactory", types.SimpleNamespace(build_lazy=lambda _cfg: object()))
-    monkeypatch.setattr(main_mod, "WriterFactory", types.SimpleNamespace(build=lambda _cfg: DummyWriter()))
+    monkeypatch.setattr(
+        main_mod,
+        "SearchEngineFactory",
+        types.SimpleNamespace(build=lambda **kwargs: object()),
+    )
+    monkeypatch.setattr(
+        main_mod, "LLMConfig", types.SimpleNamespace(load=lambda _path: object())
+    )
+    monkeypatch.setattr(
+        main_mod,
+        "LLMServiceFactory",
+        types.SimpleNamespace(build_lazy=lambda _cfg: object()),
+    )
+    monkeypatch.setattr(
+        main_mod,
+        "WriterFactory",
+        types.SimpleNamespace(build=lambda _cfg: DummyWriter()),
+    )
 
     # No-op the heavy flow functions to keep the test focused on wiring
-    monkeypatch.setattr(main_mod, "generate_and_add_queries", lambda *args, **kwargs: None)
-    monkeypatch.setattr(main_mod, "add_cartesian_product_scores", lambda *args, **kwargs: None)
-    monkeypatch.setattr(main_mod, "expand_docset_with_search_engine_top_k", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        main_mod, "generate_and_add_queries", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        main_mod, "add_cartesian_product_scores", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        main_mod, "expand_docset_with_search_engine_top_k", lambda *args, **kwargs: None
+    )
 
     # Replace DataStore with a dummy that captures the autosave parameter
     class DummyDataStore:

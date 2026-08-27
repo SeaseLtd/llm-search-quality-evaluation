@@ -3,7 +3,9 @@ from pathlib import Path
 import pytest
 import jsonlines
 
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import Config
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import (
+    Config,
+)
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
@@ -52,9 +54,15 @@ def _create_dataset_and_load_config(
     )
     return config
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_custom_retrieval_task_with_valid_data__expects__loads_corpus_queries_and_relevant_docs_correctly(tmp_path: Path) -> None:
-    from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.retrieval_task import CustomRetrievalTask
+def test_custom_retrieval_task_with_valid_data__expects__loads_corpus_queries_and_relevant_docs_correctly(
+    tmp_path: Path,
+) -> None:
+    from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.retrieval_task import (
+        CustomRetrievalTask,
+    )
+
     config = _create_dataset_and_load_config(tmp_path, "retrieval")
     retrieval_task = CustomRetrievalTask()
     retrieval_task.load_data(config=config)
@@ -76,9 +84,15 @@ def test_custom_retrieval_task_with_valid_data__expects__loads_corpus_queries_an
     assert "d3" not in relevant_docs["q1"]
     assert retrieval_task.data_loaded is True
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_custom_reranking_task_with_valid_data__expects__loads_dataset_with_positive_and_negative_examples(tmp_path: Path) -> None:
-    from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.reranking_task import CustomRerankingTask
+def test_custom_reranking_task_with_valid_data__expects__loads_dataset_with_positive_and_negative_examples(
+    tmp_path: Path,
+) -> None:
+    from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.reranking_task import (
+        CustomRerankingTask,
+    )
+
     config = _create_dataset_and_load_config(tmp_path, "reranking")
     reranking_task = CustomRerankingTask()
     reranking_task.load_data(config=config)

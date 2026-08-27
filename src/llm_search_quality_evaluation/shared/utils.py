@@ -3,14 +3,18 @@ import re
 import html
 import unicodedata
 
+
 def is_json_serializable(value: Any) -> bool:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return True
     if isinstance(value, list):
         return all(is_json_serializable(item) for item in value)
     if isinstance(value, dict):
-        return all(isinstance(k, str) and is_json_serializable(val) for k, val in value.items())
+        return all(
+            isinstance(k, str) and is_json_serializable(val) for k, val in value.items()
+        )
     return False
+
 
 def _to_string(value: Any) -> str:
     if value is None:
@@ -19,6 +23,7 @@ def _to_string(value: Any) -> str:
         return " ".join(str(val) for val in value if val is not None)
     return str(value)
 
+
 # ────────────────────────────────────────────
 # Text normalization helpers
 # ────────────────────────────────────────────
@@ -26,6 +31,7 @@ def _to_string(value: Any) -> str:
 _TAG_REGEX = re.compile(r"<.*?>")
 _CTRL_REGEX = re.compile(r"[\u0000-\u001F\u007F-\u009F]")
 _WS_REGEX = re.compile(r"\s+")
+
 
 def clean_text(text: str) -> str:
     """Safe text cleaning used for document field values.
@@ -52,6 +58,7 @@ def clean_text(text: str) -> str:
     # Normalize whitespace
     t = _WS_REGEX.sub(" ", t).strip()
     return t
+
 
 def join_fields_as_text(fields: dict[str, Any], exclude: set[str] | str) -> str:
     if isinstance(exclude, str):

@@ -6,17 +6,23 @@ import numpy as np
 import jsonlines
 from mteb.models.cache_wrapper import CachedEmbeddingWrapper
 
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.reranking_task import compose_text
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.utils import (
-    read_corpus_retrieval, read_corpus_reranking, read_queries
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.reranking_task import (
+    compose_text,
 )
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import TASKS_NAME_MAPPING
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.utils import (
+    read_corpus_retrieval,
+    read_corpus_reranking,
+    read_queries,
+)
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import (
+    TASKS_NAME_MAPPING,
+)
 
 log = logging.getLogger(__name__)
 
 
 def _write_embeddings_jsonl(
-        path: Path, items: Iterable[tuple[str, np.ndarray | list[float]]]
+    path: Path, items: Iterable[tuple[str, np.ndarray | list[float]]]
 ) -> None:
     with jsonlines.open(path, mode="w") as jsonl:
         for _id, vector in items:
@@ -35,13 +41,13 @@ class EmbeddingWriter:
     """
 
     def __init__(
-            self,
-            corpus_path: str | Path,
-            queries_path: str | Path,
-            cached: CachedEmbeddingWrapper,
-            cache_path: str | Path,
-            task_name: str,
-            batch_size: int,
+        self,
+        corpus_path: str | Path,
+        queries_path: str | Path,
+        cached: CachedEmbeddingWrapper,
+        cache_path: str | Path,
+        task_name: str,
+        batch_size: int,
     ):
         self.corpus_path = corpus_path
         self.queries_path = queries_path
@@ -73,7 +79,10 @@ class EmbeddingWriter:
             doc_dict_reranking = read_corpus_reranking(Path(self.corpus_path))
             doc_ids = list(doc_dict_reranking.keys())
             doc_texts = [
-                compose_text(doc_dict_reranking[_id].get("title"), doc_dict_reranking[_id].get("text"))
+                compose_text(
+                    doc_dict_reranking[_id].get("title"),
+                    doc_dict_reranking[_id].get("text"),
+                )
                 for _id in doc_ids
             ]
         else:

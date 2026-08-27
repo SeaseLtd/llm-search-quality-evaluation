@@ -1,6 +1,8 @@
 import ranx
 
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.models import EvaluationResult
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.models import (
+    EvaluationResult,
+)
 
 DEFAULT_METRICS: list[str] = [
     "ndcg@10",
@@ -49,10 +51,12 @@ def relevance_threshold(max_rating_value: int) -> int:
 
 
 def evaluate_metrics(
-    qrels: dict[str, dict[str, int]],   # query_text -> {doc_id: relevance_score}
-    run: dict[str, dict[str, int]],     # query_text -> {doc_id: rank_score} (position-derived: score = top_k - position)
-    metrics: list[str],                 # e.g. ["ndcg@10", "map@10"]
-    relevance_threshold: int,           # min relevance to count a doc as relevant for binary metrics
+    qrels: dict[str, dict[str, int]],  # query_text -> {doc_id: relevance_score}
+    run: dict[
+        str, dict[str, int]
+    ],  # query_text -> {doc_id: rank_score} (position-derived: score = top_k - position)
+    metrics: list[str],  # e.g. ["ndcg@10", "map@10"]
+    relevance_threshold: int,  # min relevance to count a doc as relevant for binary metrics
 ) -> EvaluationResult:
     """Compute `metrics` for `run` against `qrels` using ranx."""
     if not qrels:

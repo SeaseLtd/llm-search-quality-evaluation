@@ -3,6 +3,7 @@ from pathlib import Path
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
 
+
 class AbstractWriter(ABC):
     """
     Abstract base class for writers.

@@ -7,14 +7,21 @@ from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.models import Document
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
 from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWriter
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import EmbeddingWriter
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import TASKS_NAME_MAPPING
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.embedding_writer import (
+    EmbeddingWriter,
+)
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.constants import (
+    TASKS_NAME_MAPPING,
+)
 from llm_search_quality_evaluation.dataset_generator.config import Config as DGConfig
 
 
 # ---------------- commons ----------------
 
-def test_save_and_load_nested_paths__expects__data_persisted_correctly(tmp_path: Path) -> None:
+
+def test_save_and_load_nested_paths__expects__data_persisted_correctly(
+    tmp_path: Path,
+) -> None:
     """
     Verifies that DataStore can save and load nested paths.
     """
@@ -40,6 +47,7 @@ def test_save_and_load_nested_paths__expects__data_persisted_correctly(tmp_path:
 
 # ---------------- embedding-model-evaluator ----------------
 
+
 class _FakeCache:
     def __init__(self, vectors: Sequence[Sequence[float]]):
         self._vectors = vectors
@@ -51,7 +59,9 @@ class _FakeCache:
         pass
 
 
-def test_embedding_writer_with_nested_dirs__expects__creates_files_in_nested_dirs(tmp_path: Path, resource_folder) -> None:
+def test_embedding_writer_with_nested_dirs__expects__creates_files_in_nested_dirs(
+    tmp_path: Path, resource_folder
+) -> None:
     """
     Verifies that EmbeddingWriter handles nested output directories.
     """
@@ -96,13 +106,18 @@ def test_embedding_writer_with_nested_dirs__expects__creates_files_in_nested_dir
 
 # ---------------- dataset-generator ----------------
 
-def test_dataset_generator_with_nested_paths__expects__handles_paths_cross_platform(tmp_path: Path) -> None:
+
+def test_dataset_generator_with_nested_paths__expects__handles_paths_cross_platform(
+    tmp_path: Path,
+) -> None:
     """
     Verifies that DatasetGenerator handles nested output directories.
     """
     # create minimal valid LLM config file
     llm_cfg_path = tmp_path / "llm.yaml"
-    llm_cfg_path.write_text("name: openai\napi_key_env: OPENAI_API_KEY\nmodel: gpt-4o-mini\nmax_tokens: 32\n")
+    llm_cfg_path.write_text(
+        "name: openai\napi_key_env: OPENAI_API_KEY\nmodel: gpt-4o-mini\nmax_tokens: 32\n"
+    )
 
     template_path = tmp_path / "template.json"
     template_path.write_text("{'q': '*:*'}")
@@ -120,7 +135,7 @@ def test_dataset_generator_with_nested_paths__expects__handles_paths_cross_platf
     relevance_scale: "binary"
     llm_configuration_file: "{llm_cfg_path.as_posix()}"
     output_format: "mteb"
-    output_destination: "{(tmp_path / 'nested' / 'out').as_posix()}"
+    output_destination: "{(tmp_path / "nested" / "out").as_posix()}"
     """
     cfg_path.write_text(cfg_content)
 
@@ -132,8 +147,11 @@ def test_dataset_generator_with_nested_paths__expects__handles_paths_cross_platf
     target_dir.mkdir(parents=True, exist_ok=True)
     assert target_dir.exists()
 
+
 # ---------------- commons (encoding) ----------------
-def test_writer_with_special_chars__expects__correctly_handles_specials(tmp_path: Path) -> None:
+def test_writer_with_special_chars__expects__correctly_handles_specials(
+    tmp_path: Path,
+) -> None:
     """Verifies that writers correctly handle non-ASCII chars thanks to UTF-8 encoding."""
     ds = DataStore(ignore_saved_data=True)
     doc = Document(id="doc-ñ", fields={"title": "t"})
@@ -158,4 +176,3 @@ def test_writer_with_special_chars__expects__correctly_handles_specials(tmp_path
     content = output_file.read_text(encoding="utf-8")
     assert query_text in content
     assert "doc-ñ" in content
-

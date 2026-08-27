@@ -4,16 +4,17 @@ from pathlib import Path
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
-from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWriter, QUEPID_OUTPUT_FILENAME
+from llm_search_quality_evaluation.shared.writers.quepid_writer import (
+    QuepidWriter,
+    QUEPID_OUTPUT_FILENAME,
+)
 from llm_search_quality_evaluation.shared.models import Document
 
 
 @pytest.fixture
 def writer_config():
-    return WriterConfig(
-        output_format='quepid',
-        index='testcore'
-    )
+    return WriterConfig(output_format="quepid", index="testcore")
+
 
 # helper shared with other writer tests
 def _add_query_with_doc(ds: DataStore, qtext: str, doc_id: str) -> str:
@@ -56,6 +57,7 @@ def unrated_datastore() -> DataStore:
 
 # ---------------- tests -----------------
 
+
 class TestQuepidWriter:
     def _assert_csv(self, file: Path, expected_rows: list[tuple[str, str, str]]):
         with open(file, newline="") as csvfile:
@@ -66,18 +68,23 @@ class TestQuepidWriter:
     def test_write_success(self, writer_config, populated_datastore, tmp_path: Path):
         out = tmp_path / QUEPID_OUTPUT_FILENAME
         QuepidWriter(writer_config).write(tmp_path, populated_datastore)
-        self._assert_csv(out, [
-            ("test query 1", "doc1", "1"),
-            ("test query 1", "doc2", "2"),
-            ("test query 2", "doc4", "3"),
-        ])
+        self._assert_csv(
+            out,
+            [
+                ("test query 1", "doc1", "1"),
+                ("test query 1", "doc2", "2"),
+                ("test query 2", "doc4", "3"),
+            ],
+        )
 
     def test_write_empty(self, writer_config, empty_datastore, tmp_path: Path):
         out = tmp_path / QUEPID_OUTPUT_FILENAME
         QuepidWriter(writer_config).write(tmp_path, empty_datastore)
         self._assert_csv(out, [])
 
-    def test_write_no_rated_docs(self, writer_config, unrated_datastore, tmp_path: Path):
+    def test_write_no_rated_docs(
+        self, writer_config, unrated_datastore, tmp_path: Path
+    ):
         out = tmp_path / QUEPID_OUTPUT_FILENAME
         QuepidWriter(writer_config).write(tmp_path, unrated_datastore)
         self._assert_csv(out, [])
@@ -85,7 +92,7 @@ class TestQuepidWriter:
     def test_special_characters(self, writer_config, tmp_path: Path):
         ds = DataStore(ignore_saved_data=True)
         qtext = 'query with "quotes" and a comma,'
-        doc = 'doc_id_with_a_newline\n'
+        doc = "doc_id_with_a_newline\n"
         qid = _add_query_with_doc(ds, qtext, doc)
         ds.create_rating_score(qid, doc, 1)
         out = tmp_path / QUEPID_OUTPUT_FILENAME

@@ -5,7 +5,10 @@ class LLMScoreResponse:
     """
     Parses and validates an LLM score response.
     """
-    def __init__(self, score: int, scale: str = "graded", explanation: Optional[str] = None):
+
+    def __init__(
+        self, score: int, scale: str = "graded", explanation: Optional[str] = None
+    ):
         """
         Initializes the object by validating the score.
 
@@ -19,17 +22,19 @@ class LLMScoreResponse:
         """
         if scale not in ["binary", "graded"]:
             raise ValueError(f"Invalid scale: {scale}. Must be 'binary' or 'graded'.")
-            
+
         if scale == "binary" and score not in {0, 1}:
             raise ValueError(f"Score must be 0 or 1 for binary scale, got {score}")
         elif scale == "graded" and score not in {0, 1, 2}:
             raise ValueError(f"Score must be 0, 1, or 2 for graded scale, got {score}")
-            
+
         self.score = score
 
         if explanation is not None:
             if not isinstance(explanation, str) or not explanation.strip():
-                raise ValueError("`explanation`, if provided, must be a non‑empty string.")
+                raise ValueError(
+                    "`explanation`, if provided, must be a non‑empty string."
+                )
         self.explanation = explanation
 
     def get_score(self) -> int:
@@ -37,4 +42,3 @@ class LLMScoreResponse:
         Returns the validated score.
         """
         return self.score
-

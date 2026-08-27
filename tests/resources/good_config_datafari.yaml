@@ -1,0 +1,60 @@
+# Optional query template used for evaluation (Solr-style payload)
+query_template: "examples/templates/template_datafari.json"
+
+# Search engine type
+search_engine_type: "datafari"
+
+# Name of the collection / core
+collection_name: "testcore"
+
+# Datafari REST endpoint (Solr-compatible API)
+search_engine_url: "https://rag.datafari.com/Datafari/rest/v2.0/search/"
+
+# Optional filter on documents used for dataset generation
+# documents_filter:
+#   - exactContent:
+#       - "test"
+#       - "example"
+
+# Number of documents to retrieve for query generation
+number_of_docs: 100
+
+# Fields retrieved from Datafari
+doc_fields:
+  - "exactTitle"
+  - "exactContent"
+
+# Optional predefined queries file
+queries: null
+
+# Enable query generation from documents
+generate_queries_from_documents: true
+
+# Number of queries to generate
+num_queries_needed: 5
+
+# Relevance scale for evaluation
+relevance_scale: "graded"
+
+# LLM configuration file (used for query generation / scoring)
+llm_configuration_file: "examples/configs/dataset_generator/llm_config.yaml"
+
+# Max number of query terms for LLM generation
+max_query_terms: 8
+
+# Output format
+output_format: "mteb"
+
+# Output destination
+output_destination: "resources"
+
+# Save LLM explanations
+save_llm_explanation: true
+
+llm_explanation_destination: "resources/rating_explanation.json"
+
+# Autosave interval
+datastore_autosave_every_n_updates: 50
+
+# Enable cartesian product scoring
+enable_cartesian_product: false

@@ -1,0 +1,8 @@
+{
+  "q": "$query",
+  "defType": "edismax",
+  "qf": "exactTitle exactContent",
+  "mm": 3,
+  "rows": 2,
+  "fl": "id,exactTitle,exactContent,score"
+}

@@ -1,4 +1,6 @@
-from llm_search_quality_evaluation.shared.writers.evaluation_dataset_writer import EvaluationDatasetWriter
+from llm_search_quality_evaluation.shared.writers.evaluation_dataset_writer import (
+    EvaluationDatasetWriter,
+)
 from llm_search_quality_evaluation.shared.writers.writer_factory import WriterFactory
 from llm_search_quality_evaluation.shared.writers.abstract_writer import AbstractWriter
 from llm_search_quality_evaluation.shared.writers.quepid_writer import QuepidWriter

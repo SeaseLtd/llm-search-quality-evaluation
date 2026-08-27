@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 RRE_OUTPUT_FILENAME = "ratings.json"
 
+
 class RreWriter(AbstractWriter):
     """
     Writes query ratings in RRE format (ratings.json).
@@ -22,7 +23,9 @@ class RreWriter(AbstractWriter):
         for rating in ratings:
             query = datastore.get_query(rating.query_id)
             if query:
-                query_text_to_doc_and_scores[query.text].append((rating.doc_id, int(rating.score)))
+                query_text_to_doc_and_scores[query.text].append(
+                    (rating.doc_id, int(rating.score))
+                )
 
         query_groups = []
         for query_text, related_docs_and_scores in query_text_to_doc_and_scores.items():
@@ -37,10 +40,10 @@ class RreWriter(AbstractWriter):
                         "template": str(self.writer_config.query_template),
                         "placeholders": {
                             str(self.writer_config.query_placeholder): query_text
-                        }
+                        },
                     }
                 ],
-                "relevant_documents": rating_to_doc_ids
+                "relevant_documents": rating_to_doc_ids,
             }
             query_groups.append(query_group)
 
@@ -48,7 +51,7 @@ class RreWriter(AbstractWriter):
             "index": self.writer_config.index,
             "id_field": self.writer_config.id_field,
             "query_placeholder": self.writer_config.query_placeholder,
-            "query_groups": query_groups
+            "query_groups": query_groups,
         }
         return rre_formatted
 
@@ -58,6 +61,8 @@ class RreWriter(AbstractWriter):
         """
         output_path = Path(output_path) / RRE_OUTPUT_FILENAME
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', newline='', encoding='utf-8') as json_file:
+        with open(output_path, "w", newline="", encoding="utf-8") as json_file:
             json.dump(self._build_json_doc_records(datastore), json_file, indent=2)
-            log.info(f"RRE formatted records have been written to the json file, {str(output_path)}")
+            log.info(
+                f"RRE formatted records have been written to the json file, {str(output_path)}"
+            )

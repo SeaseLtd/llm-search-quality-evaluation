@@ -10,6 +10,7 @@ The main components are:
 import logging
 from typing import Union
 
+
 def configure_logging(level: Union[str, int] = logging.INFO) -> None:
     """
     Configures the root logger for the application.
@@ -20,9 +21,10 @@ def configure_logging(level: Union[str, int] = logging.INFO) -> None:
     logging.basicConfig(
         # filename='logs/log_file_name.log',
         level=level,
-        format='[%(asctime)s] %(filename)-28s:%(lineno)-4d %(levelname)-7s - %(message)s',
-        datefmt='%H:%M:%S'
+        format="[%(asctime)s] %(filename)-28s:%(lineno)-4d %(levelname)-7s - %(message)s",
+        datefmt="%H:%M:%S",
     )
+
 
 def setup_logging(verbose: bool = False) -> None:
     if verbose:
@@ -31,6 +33,7 @@ def setup_logging(verbose: bool = False) -> None:
         configure_logging(logging.INFO)
     return
 
+
 # EXAMPLE:
 if __name__ == "__main__":
     # 1. Configure logging
@@ -38,7 +41,9 @@ if __name__ == "__main__":
     configure_logging(level=logging.DEBUG)
 
     # 2. Get a logger instance
-    log = logging.getLogger(__name__) # Best practice: use the module name for the logger.
+    log = logging.getLogger(
+        __name__
+    )  # Best practice: use the module name for the logger.
 
     # 3. Log messages at different levels
     print("\n--- Logging examples ---")

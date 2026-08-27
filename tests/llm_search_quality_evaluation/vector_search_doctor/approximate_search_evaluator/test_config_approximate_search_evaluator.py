@@ -4,13 +4,16 @@ import pytest
 from pydantic import HttpUrl
 from pydantic_core import ValidationError
 
-from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator import Config
+from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator import (
+    Config,
+)
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.metrics import (
     DEFAULT_METRICS,
 )
 
 
 # --------------- solr ---------------
+
 
 class TestSolrConfig:
     def test_good_config_solr_all_fields(self, resource_folder: Path) -> None:
@@ -52,11 +55,14 @@ class TestSolrConfig:
 
 # --------------- elasticsearch ---------------
 
+
 class TestElasticsearchConfig:
     def test_good_config_elasticsearch_all_fields(self, resource_folder: Path) -> None:
         config = Config.load(resource_folder / "good_config_elasticsearch.yaml")
 
-        assert config.query_template == Path("tests/resources/template_elasticsearch.json")
+        assert config.query_template == Path(
+            "tests/resources/template_elasticsearch.json"
+        )
         assert config.search_engine_type == "elasticsearch"
         assert config.collection_name == "testcore"
         assert config.search_engine_url == HttpUrl("http://localhost:9200/")
@@ -79,6 +85,7 @@ class TestElasticsearchConfig:
 
 # --------------- opensearch ---------------
 
+
 class TestOpensearchConfig:
     def test_good_config_opensearch(self, resource_folder: Path) -> None:
         config = Config.load(resource_folder / "good_config_opensearch.yaml")
@@ -93,8 +100,11 @@ class TestOpensearchConfig:
 
 # --------------- vespa rejected ---------------
 
+
 class TestVespaRejected:
-    def test_vespa_engine_type_rejected(self, resource_folder: Path, tmp_path: Path) -> None:
+    def test_vespa_engine_type_rejected(
+        self, resource_folder: Path, tmp_path: Path
+    ) -> None:
         config_file = tmp_path / "vespa_config.yaml"
         config_file.write_text(
             "query_template: tests/resources/template_solr.json\n"
@@ -109,15 +119,21 @@ class TestVespaRejected:
 
 # --------------- missing required fields ---------------
 
+
 class TestMissingRequiredFields:
-    @pytest.mark.parametrize("file_name", [
-        "missing_query_template.yaml",
-        "missing_search_engine_type.yaml",
-        "missing_collection_name.yaml",
-        "missing_search_engine_url.yaml",
-        "missing_evaluation_dataset_path.yaml",
-    ])
-    def test_missing_required_field_raises(self, resource_folder: Path, file_name: str) -> None:
+    @pytest.mark.parametrize(
+        "file_name",
+        [
+            "missing_query_template.yaml",
+            "missing_search_engine_type.yaml",
+            "missing_collection_name.yaml",
+            "missing_search_engine_url.yaml",
+            "missing_evaluation_dataset_path.yaml",
+        ],
+    )
+    def test_missing_required_field_raises(
+        self, resource_folder: Path, file_name: str
+    ) -> None:
         with pytest.raises(ValidationError):
             Config.load(resource_folder / file_name)
 
@@ -142,12 +158,15 @@ class TestMissingRequiredFields:
 
 # --------------- metrics validation ---------------
 
+
 class TestMetricsValidation:
     def test_metrics_default_is_default_metrics(self, resource_folder: Path) -> None:
         config = Config.load(resource_folder / "missing_optional_solr.yaml")
         assert config.metrics == list(DEFAULT_METRICS)
 
-    def test_unsupported_metric_raises(self, resource_folder: Path, tmp_path: Path) -> None:
+    def test_unsupported_metric_raises(
+        self, resource_folder: Path, tmp_path: Path
+    ) -> None:
         config_file = tmp_path / "bad_metrics.yaml"
         config_file.write_text(
             "query_template: tests/resources/template_solr.json\n"
@@ -175,6 +194,7 @@ class TestMetricsValidation:
 
 
 # --------------- top_k validation ---------------
+
 
 class TestTopKValidation:
     def test_top_k_zero_raises(self, resource_folder: Path, tmp_path: Path) -> None:

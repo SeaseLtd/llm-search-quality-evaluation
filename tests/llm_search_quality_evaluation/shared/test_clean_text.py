@@ -19,6 +19,7 @@ def test_clean_text__expects__be_conservative_by_default():
     # By default (lowercase=False), keys differ
     assert clean_text(a) != clean_text(b)
 
+
 def test_clean_text__expects__preserves_accent_and_punct():
     accented = "café?"
     plain = "cafe"

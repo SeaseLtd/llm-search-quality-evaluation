@@ -11,10 +11,8 @@ from llm_search_quality_evaluation.shared.writers.mteb_writer import MtebWriter
 
 @pytest.fixture
 def writer_config():
-    return WriterConfig(
-        output_format='mteb',
-        index='testcore'
-    )
+    return WriterConfig(output_format="mteb", index="testcore")
+
 
 @pytest.fixture
 def populated_datastore() -> DataStore:
@@ -22,10 +20,18 @@ def populated_datastore() -> DataStore:
     datastore = DataStore(ignore_saved_data=True)
 
     # Add docs
-    datastore.add_document(Document(id="doc1", fields={"title": "title 1", "description": "desc 1"}))
-    datastore.add_document(Document(id="doc2", fields={"title": "title 2", "description": "desc 2"}))
-    datastore.add_document(Document(id="doc4", fields={"title": "title 4", "description": "desc 4"}))
-    datastore.add_document(Document(id="doc5", fields={"title": "title 5", "description": "desc 5"}))
+    datastore.add_document(
+        Document(id="doc1", fields={"title": "title 1", "description": "desc 1"})
+    )
+    datastore.add_document(
+        Document(id="doc2", fields={"title": "title 2", "description": "desc 2"})
+    )
+    datastore.add_document(
+        Document(id="doc4", fields={"title": "title 4", "description": "desc 4"})
+    )
+    datastore.add_document(
+        Document(id="doc5", fields={"title": "title 5", "description": "desc 5"})
+    )
 
     # Add queries and ratings
     q1 = datastore.add_query("test query 1")
@@ -41,8 +47,9 @@ def populated_datastore() -> DataStore:
 
 
 class TestMtebWriter:
-
-    def test_write_expect_written_to_jsonl(self, writer_config, populated_datastore, tmp_path: Path):
+    def test_write_expect_written_to_jsonl(
+        self, writer_config, populated_datastore, tmp_path: Path
+    ):
         output_dir = tmp_path
         writer = MtebWriter(writer_config)
         writer.write(output_dir, populated_datastore)
@@ -78,5 +85,7 @@ class TestMtebWriter:
         assert len(rows) == len(ratings)
 
         expected_ratings = {(r.query_id, r.doc_id, r.score) for r in ratings}
-        written_ratings = {(row["query_id"], row["doc_id"], row["rating"]) for row in rows}
+        written_ratings = {
+            (row["query_id"], row["doc_id"], row["rating"]) for row in rows
+        }
         assert written_ratings == expected_ratings

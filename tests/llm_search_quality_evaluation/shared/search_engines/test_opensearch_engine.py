@@ -8,7 +8,9 @@ from llm_search_quality_evaluation.dataset_generator.config import Config
 from llm_search_quality_evaluation.shared.logger import configure_logging
 from llm_search_quality_evaluation.shared.models import Document
 from llm_search_quality_evaluation.shared.search_engines import OpenSearchEngine
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import NUMBER_OF_DOCS_EACH_FETCH
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
+    NUMBER_OF_DOCS_EACH_FETCH,
+)
 from mocks.opensearch import MockResponseOpenSearchEngine
 
 configure_logging(level=logging.DEBUG)
@@ -19,6 +21,7 @@ def opensearch_config(resource_folder):
     """Fixture that loads a valid OpenSearch config for unit tests."""
     return Config.load(resource_folder / "good_config_opensearch.yaml")
 
+
 @pytest.fixture
 def expected_doc():
     opensearch = OpenSearchEngine("http://testurl/testcore")
@@ -26,9 +29,10 @@ def expected_doc():
         id="1",
         fields={
             "title": opensearch._normalize("test title"),
-            "description": opensearch._normalize("test description")
-        }
+            "description": opensearch._normalize("test description"),
+        },
     )
+
 
 @pytest.fixture
 def opensearch_hit():
@@ -39,12 +43,14 @@ def opensearch_hit():
         "_source": {
             "id": "1",
             "title": "test title",
-            "description": "test description"
-        }
+            "description": "test description",
+        },
     }
 
 
-def test_opensearch_engine_fetch_for_query_generation__expects__result_returned(monkeypatch, opensearch_config, opensearch_hit, expected_doc):
+def test_opensearch_engine_fetch_for_query_generation__expects__result_returned(
+    monkeypatch, opensearch_config, opensearch_hit, expected_doc
+):
     opensearch = OpenSearchEngine("http://testurl/testcore")
 
     def mock_post(*args, **kwargs):
@@ -55,14 +61,16 @@ def test_opensearch_engine_fetch_for_query_generation__expects__result_returned(
     result = opensearch.fetch_for_query_generation(
         documents_filter=opensearch_config.documents_filter,
         number_of_docs=opensearch_config.number_of_docs,
-        doc_fields=opensearch_config.doc_fields
+        doc_fields=opensearch_config.doc_fields,
     )
 
     assert len(result) == 1, "Expected one document"
     assert result[0] == expected_doc, "Mismatch in query generated doc"
 
 
-def test_opensearch_engine_fetch_for_evaluation__expects__result_returned(monkeypatch, opensearch_config, opensearch_hit, expected_doc):
+def test_opensearch_engine_fetch_for_evaluation__expects__result_returned(
+    monkeypatch, opensearch_config, opensearch_hit, expected_doc
+):
     opensearch = OpenSearchEngine("http://testurl/testcore")
 
     def mock_post(*args, **kwargs):
@@ -73,13 +81,16 @@ def test_opensearch_engine_fetch_for_evaluation__expects__result_returned(monkey
     result = opensearch.fetch_for_evaluation(
         query_template=opensearch_config.query_template,
         keyword="car",
-        doc_fields=opensearch_config.doc_fields
+        doc_fields=opensearch_config.doc_fields,
     )
 
     assert len(result) == 1, "Expected one document"
     assert result[0] == expected_doc, "Mismatch in doc evaluation"
 
-def test_opensearch_engine_fetch_all__expects__results_returned(monkeypatch, opensearch_config, opensearch_hit, expected_doc):
+
+def test_opensearch_engine_fetch_all__expects__results_returned(
+    monkeypatch, opensearch_config, opensearch_hit, expected_doc
+):
     search_engine = OpenSearchEngine("https://fakeurl")
 
     call_counter = {"count": 0}
@@ -87,9 +98,13 @@ def test_opensearch_engine_fetch_all__expects__results_returned(monkeypatch, ope
     def mock_post(*args, **kwargs):
         call_counter["count"] += 1
         if call_counter["count"] == 1:
-            return MockResponseOpenSearchEngine(hits_data=[], total_hits =2 * NUMBER_OF_DOCS_EACH_FETCH, status_code=200)
+            return MockResponseOpenSearchEngine(
+                hits_data=[], total_hits=2 * NUMBER_OF_DOCS_EACH_FETCH, status_code=200
+            )
         elif call_counter["count"] == 2 or call_counter["count"] == 3:
-            return MockResponseOpenSearchEngine(hits_data=[opensearch_hit] * NUMBER_OF_DOCS_EACH_FETCH, status_code=200)
+            return MockResponseOpenSearchEngine(
+                hits_data=[opensearch_hit] * NUMBER_OF_DOCS_EACH_FETCH, status_code=200
+            )
         else:
             return MockResponseOpenSearchEngine(hits_data=[], status_code=200)
 
@@ -110,8 +125,11 @@ def test_normalize():
     engine = OpenSearchEngine("http://dummy")
 
     assert engine._normalize("  hello  ") == ["hello"], "Failed to normalize string"
-    assert engine._normalize(["a", " b "]) == ["a", "b"], "Failed to normalize list of strings"
+    assert engine._normalize(["a", " b "]) == ["a", "b"], (
+        "Failed to normalize list of strings"
+    )
     assert engine._normalize(123) == ["123"], "Failed to normalize integer"
     assert engine._normalize(None) == [], "Failed to normalize None"
-    assert engine._normalize({"key": "   value  "}) == [json.dumps({"key": "value"})], "Failed to normalize dict"
-
+    assert engine._normalize({"key": "   value  "}) == [json.dumps({"key": "value"})], (
+        "Failed to normalize dict"
+    )

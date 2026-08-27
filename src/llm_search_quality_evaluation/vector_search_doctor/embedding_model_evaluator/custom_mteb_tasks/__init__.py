@@ -1,7 +1,8 @@
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.reranking_task import CustomRerankingTask
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.retrieval_task import CustomRetrievalTask
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.reranking_task import (
+    CustomRerankingTask,
+)
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.custom_mteb_tasks.retrieval_task import (
+    CustomRetrievalTask,
+)
 
-__all__ = [
-    "CustomRerankingTask",
-    "CustomRetrievalTask"
-]
+__all__ = ["CustomRerankingTask", "CustomRetrievalTask"]

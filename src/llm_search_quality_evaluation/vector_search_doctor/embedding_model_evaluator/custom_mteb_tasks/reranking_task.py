@@ -6,8 +6,14 @@ from mteb.abstasks.AbsTask import TaskMetadata
 from mteb.abstasks.AbsTaskReranking import AbsTaskReranking
 from mteb.overview import TASKS_REGISTRY
 
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import Config
-from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.utils import read_corpus_reranking, read_queries, read_candidates
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.config import (
+    Config,
+)
+from llm_search_quality_evaluation.vector_search_doctor.embedding_model_evaluator.utils import (
+    read_corpus_reranking,
+    read_queries,
+    read_candidates,
+)
 
 log = logging.getLogger(__name__)
 
@@ -101,6 +107,7 @@ class CustomRerankingTask(AbsTaskReranking):
 
         self.dataset = DatasetDict({"test": Dataset.from_list(dataset)})
         self.data_loaded = True
+
 
 # the tasks need to be added to the official registry, otherwise are not seen from CachedEmbeddingWrapper class
 TASKS_REGISTRY["CustomRerankingTask"] = CustomRerankingTask

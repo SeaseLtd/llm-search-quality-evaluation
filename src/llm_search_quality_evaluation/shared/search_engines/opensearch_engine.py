@@ -8,7 +8,9 @@ from pydantic import HttpUrl
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
 from llm_search_quality_evaluation.shared.models.document import Document
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
+    BaseSearchEngine,
+)
 from llm_search_quality_evaluation.shared.utils import clean_text
 
 log = logging.getLogger(__name__)
@@ -21,14 +23,18 @@ class OpenSearchEngine(BaseSearchEngine):
 
     def __init__(self, endpoint: HttpUrl):
         super().__init__(endpoint)
-        self.HEADERS = {'Content-Type': 'application/json'}
+        self.HEADERS = {"Content-Type": "application/json"}
         self.UNIQUE_KEY = "id"
 
-    def _get_total_hits(self, payload: Dict[str, Any]) -> int:
+    def _get_total_hits(
+        self, payload: Dict[str, Any], collection: str | None = None
+    ) -> int:
         search_url = f"{self.endpoint}/_search"
         log.debug(f"User-specified fields: {payload.get('_source')}")
         log.debug(f"Search url: {search_url}")
-        log.debug(f"OpenSearch payload (showing payload 500 first chars): {str(payload)[:500]}")
+        log.debug(
+            f"OpenSearch payload (showing payload 500 first chars): {str(payload)[:500]}"
+        )
         try:
             response = requests.post(search_url, headers=self.HEADERS, json=payload)
             response.raise_for_status()
@@ -36,19 +42,24 @@ class OpenSearchEngine(BaseSearchEngine):
             log.error(f"OpenSearch query failed: {e}")
             raise
 
-        return int(response.json().get('hits', {}).get('total', {}).get('value', 0))
+        return int(response.json().get("hits", {}).get("total", {}).get("value", 0))
 
     @property
     def _fetch_all_payload(self) -> Dict[str, Any]:
         return {"match_all": {}}
 
-    def fetch_for_query_generation(self,
-                                   documents_filter: Union[None, List[Dict[str, List[str]]]],
-                                   number_of_docs: int,
-                                   doc_fields: List[str],
-                                   start: int = 0) -> List[Document]:
+    def fetch_for_query_generation(
+        self,
+        documents_filter: Union[None, List[Dict[str, List[str]]]],
+        number_of_docs: int,
+        doc_fields: List[str],
+        start: int = 0,
+        collection: str | None = None,
+    ) -> List[Document]:
         """Fetches a list of documents for query generation based on optional filters."""
-        log.info(f"Fetching {number_of_docs} documents (size) from the search engine for query generation")
+        log.info(
+            f"Fetching {number_of_docs} documents (size) from the search engine for query generation"
+        )
 
         filters: List[Dict[str, Any]] = []
         if documents_filter:
@@ -61,15 +72,15 @@ class OpenSearchEngine(BaseSearchEngine):
                     else:
                         filters.append({"terms": {field: values}})
 
-        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
+        fields = (
+            doc_fields
+            if self.UNIQUE_KEY in doc_fields
+            else doc_fields + [self.UNIQUE_KEY]
+        )
 
         query: Dict[str, Any] = {}
         if filters:
-            query = {
-                "bool": {
-                    "filter": filters
-                }
-            }
+            query = {"bool": {"filter": filters}}
         else:
             query = self._fetch_all_payload
 
@@ -77,21 +88,36 @@ class OpenSearchEngine(BaseSearchEngine):
             "query": query,
             "_source": fields,
             "from": start,
-            "size": number_of_docs
+            "size": number_of_docs,
         }
 
         return self._search(payload)
 
-    def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str = "*", extra_placeholders: Dict[str, str] | None = None) -> List[Document]:
+    def fetch_for_evaluation(
+        self,
+        query_template: Path | str,
+        doc_fields: List[str],
+        keyword: str = "*",
+        extra_placeholders: Dict[str, str] | None = None,
+        collection: str | None = None,
+    ) -> List[Document]:
         """Fetches documents for evaluation by executing a query built from a template."""
 
-        log.info("Fetching documents (size) based on query template for query evaluation")
+        log.info(
+            "Fetching documents (size) based on query template for query evaluation"
+        )
 
         query_template = Path(query_template)
-        payload: Dict[str, Any] = self._parse_query_template(query_template, extra_placeholders)
+        payload: Dict[str, Any] = self._parse_query_template(
+            query_template, extra_placeholders
+        )
         payload = self._replace_placeholder(payload, self.QUERY_PLACEHOLDER, keyword)
 
-        fields = doc_fields if self.UNIQUE_KEY in doc_fields else doc_fields + [self.UNIQUE_KEY]
+        fields = (
+            doc_fields
+            if self.UNIQUE_KEY in doc_fields
+            else doc_fields + [self.UNIQUE_KEY]
+        )
         payload["_source"] = fields
 
         return self._search(payload)
@@ -101,7 +127,9 @@ class OpenSearchEngine(BaseSearchEngine):
         search_url = f"{self.endpoint}/_search"
         log.debug(f"User-specified fields: {payload.get('_source')}")
         log.debug(f"Search url: {search_url}")
-        log.debug(f"OpenSearch payload (showing payload 500 first chars): {str(payload)[:500]}")
+        log.debug(
+            f"OpenSearch payload (showing payload 500 first chars): {str(payload)[:500]}"
+        )
         try:
             response = requests.post(search_url, headers=self.HEADERS, json=payload)
             response.raise_for_status()
@@ -114,7 +142,9 @@ class OpenSearchEngine(BaseSearchEngine):
 
         for hit in hits:
             source = hit.get("_source", {})
-            log.debug(f"Opensearch returns fields based on payload: {list(source.items())}")
+            log.debug(
+                f"Opensearch returns fields based on payload: {list(source.items())}"
+            )
             doc_id = source.get("id", hit.get("_id"))
 
             fields = {
@@ -151,4 +181,3 @@ class OpenSearchEngine(BaseSearchEngine):
 
         except Exception as e:
             raise ValueError(f"Failed to normalize value: {value}") from e
-

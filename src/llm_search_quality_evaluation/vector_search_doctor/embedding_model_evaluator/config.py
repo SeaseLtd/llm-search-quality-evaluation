@@ -17,7 +17,9 @@ class Config(BaseModel):
     queries_path: FilePath = Field(..., description="Queries jsonl file path")
     candidates_path: FilePath = Field(..., description="Candidates jsonl file path")
     relevance_scale: Literal["binary", "graded"]
-    dataset_name: str = Field("custom-dataset", description="Dataset name for MTEB task")
+    dataset_name: str = Field(
+        "custom-dataset", description="Dataset name for MTEB task"
+    )
     split: str = Field("test", description="Dataset split (train/dev/test)")
     output_dest: Optional[Path] = Field(
         None, description="Path to save mteb output, by default saved in resources dir."
@@ -56,5 +58,7 @@ class Config(BaseModel):
         """
         with open(config_path, "r") as f:
             raw_config = yaml.safe_load(f)
-            log.debug("Embedding Model Evaluator (MTEB) configuration file loaded successfully")
+            log.debug(
+                "Embedding Model Evaluator (MTEB) configuration file loaded successfully"
+            )
         return cls(**raw_config)

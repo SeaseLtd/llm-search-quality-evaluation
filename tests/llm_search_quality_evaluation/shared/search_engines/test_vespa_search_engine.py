@@ -10,7 +10,9 @@ from llm_search_quality_evaluation.dataset_generator.config import Config
 from llm_search_quality_evaluation.shared.search_engines import VespaSearchEngine
 from llm_search_quality_evaluation.shared.models import Document
 from llm_search_quality_evaluation.shared.utils import clean_text
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import NUMBER_OF_DOCS_EACH_FETCH
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
+    NUMBER_OF_DOCS_EACH_FETCH,
+)
 from mocks.vespa import MockResponseVespaSearch
 
 configure_logging(level="DEBUG")
@@ -21,10 +23,13 @@ Magic Fixtures:
 - monkeypatch: PyTest fixture for patching HTTP calls.
 - caplog: PyTest log-capture fixture.
 """
+
+
 @pytest.fixture
 def vespa_config(resource_folder):
     """Fixture that loads a valid Vespa config for unit tests."""
     return Config.load(resource_folder / "good_config_vespa.yaml")
+
 
 # -----------------------
 # Helpers / monkeypatches
@@ -40,17 +45,22 @@ def _capture_post(monkeypatch, response_json, status_code=200):
         def __init__(self, data, code):
             self._data = data
             self.status_code = code
-        def json(self): return self._data
+
+        def json(self):
+            return self._data
+
         def raise_for_status(self):
             if self.status_code >= 400:
                 raise HTTPError(f"status {self.status_code}")
+
         @property
-        def text(self): return json.dumps(self._data)
+        def text(self):
+            return json.dumps(self._data)
 
     def _post(url, headers=None, json=None, **kwargs):
         calls["url"] = url
         calls["headers"] = headers
-        calls["json"] = json        # payload
+        calls["json"] = json  # payload
         calls["kwargs"] = kwargs
         return _Resp(response_json, status_code)
 
@@ -61,6 +71,7 @@ def _capture_post(monkeypatch, response_json, status_code=200):
 # ---------------------
 # Field Value Normalization
 # ---------------------
+
 
 @pytest.mark.parametrize(
     "input_val, expected_val",
@@ -86,20 +97,23 @@ def test_normalize_field_value__expects__correct_conversion(input_val, expected_
     assert VespaSearchEngine._normalize_field_value(input_val) == expected_val
 
 
-
 # --------------
 # Happy-path generation
 # --------------
-def test_fetch_for_query_generation__expects__builds_valid_yql_handles_hits_and_parses_response(monkeypatch):
+def test_fetch_for_query_generation__expects__builds_valid_yql_handles_hits_and_parses_response(
+    monkeypatch,
+):
     """Verify YQL composition, hits propagation, and response parsing in the generation flow."""
 
     # Simulated Vespa response (one hit with title str, description list[str])
     vespa_raw = {
         "root": {
-            "children": [{
-                "id": "id:news:news::1",
-                "fields": {"title": "Hello", "description": ["A", "B"]}
-            }]
+            "children": [
+                {
+                    "id": "id:news:news::1",
+                    "fields": {"title": "Hello", "description": ["A", "B"]},
+                }
+            ]
         }
     }
     calls = _capture_post(monkeypatch, vespa_raw, status_code=200)
@@ -128,10 +142,14 @@ def test_fetch_for_query_generation__expects__builds_valid_yql_handles_hits_and_
 
     # YQL sanity
     yql = payload["yql"]
-    assert re.search(r"select (title,\s*description|description,\s*title) from doc where ", yql)
+    assert re.search(
+        r"select (title,\s*description|description,\s*title) from doc where ", yql
+    )
     assert 'title contains "Helicopter"' in yql
-    assert ('(description contains "BOGOTA" OR description contains "Colombia")' in yql or
-            '(description contains "Colombia" OR description contains "BOGOTA")' in yql)
+    assert (
+        '(description contains "BOGOTA" OR description contains "Colombia")' in yql
+        or '(description contains "Colombia" OR description contains "BOGOTA")' in yql
+    )
     assert "bad-field" not in yql
 
     # Parsed result
@@ -142,7 +160,9 @@ def test_fetch_for_query_generation__expects__builds_valid_yql_handles_hits_and_
 # -------------------
 # Happy-path evaluation/keyword escaping
 # -------------------
-def test_fetch_for_evaluation__expects__properly_quotes_and_escapes_keyword(monkeypatch, resource_folder):
+def test_fetch_for_evaluation__expects__properly_quotes_and_escapes_keyword(
+    monkeypatch, resource_folder
+):
     """Ensure keyword literals are safely escaped/quoted in evaluation YQL."""
     vespa_raw = {"root": {"children": []}}
     calls = _capture_post(monkeypatch, vespa_raw, status_code=200)
@@ -175,27 +195,31 @@ def test_fetch_for_query_generation__expects__skip_hits_without_id(monkeypatch):
     _ = _capture_post(monkeypatch, vespa_raw, status_code=200)
 
     engine = VespaSearchEngine("https://fakehost/base/doc/")
-    docs = engine.fetch_for_query_generation(documents_filter=None, number_of_docs=5, doc_fields=["title"])
+    docs = engine.fetch_for_query_generation(
+        documents_filter=None, number_of_docs=5, doc_fields=["title"]
+    )
     assert docs == []
 
 
 # -----------------------
 # HTTP/validation errors
 # -----------------------
-def test_http_requests__expects__raise_on_negative_responses(monkeypatch, resource_folder):
+def test_http_requests__expects__raise_on_negative_responses(
+    monkeypatch, resource_folder
+):
     """Search/evaluation requests must raise ``HTTPError`` on non-success HTTP status codes."""
 
     for code in (400, 401, 402, 403, 500):
         _ = _capture_post(monkeypatch, {"root": {}}, status_code=code)
         engine = VespaSearchEngine("https://fakehost/base/doc/")
         with pytest.raises(HTTPError):
-            engine.fetch_for_query_generation(documents_filter=None, number_of_docs=1, doc_fields=None)
+            engine.fetch_for_query_generation(
+                documents_filter=None, number_of_docs=1, doc_fields=None
+            )
         with pytest.raises(HTTPError):
             template_path = resource_folder / "template_vespa_simple.yql"
             engine.fetch_for_evaluation(
-                query_template=template_path,
-                doc_fields=None,
-                keyword="x"
+                query_template=template_path, doc_fields=None, keyword="x"
             )
 
 
@@ -227,7 +251,9 @@ def test_http_requests__expects__raise_on_negative_responses(monkeypatch, resour
         },
     ],
 )
-def test_workflow_with_mocks_and_config__expects__work_with_existing(monkeypatch, mock_doc, vespa_config):
+def test_workflow_with_mocks_and_config__expects__work_with_existing(
+    monkeypatch, mock_doc, vespa_config
+):
     """Validate generation & evaluation flows against legacy mocks and YAML config."""
     vespa_raw = {"root": {"children": [mock_doc]}}
     _ = _capture_post(monkeypatch, vespa_raw, status_code=200)
@@ -240,7 +266,10 @@ def test_workflow_with_mocks_and_config__expects__work_with_existing(monkeypatch
         number_of_docs=vespa_config.number_of_docs,
         doc_fields=vespa_config.doc_fields,
     )
-    expected_fields = {k: VespaSearchEngine._normalize_field_value(v) for k, v in mock_doc["fields"].items()}
+    expected_fields = {
+        k: VespaSearchEngine._normalize_field_value(v)
+        for k, v in mock_doc["fields"].items()
+    }
     assert res[0] == Document(id=mock_doc["id"], fields=expected_fields)
 
     # Evaluation path
@@ -249,8 +278,12 @@ def test_workflow_with_mocks_and_config__expects__work_with_existing(monkeypatch
         keyword="and",
         doc_fields=vespa_config.doc_fields,
     )
-    expected_fields_eval = {k: VespaSearchEngine._normalize_field_value(v) for k, v in mock_doc["fields"].items()}
+    expected_fields_eval = {
+        k: VespaSearchEngine._normalize_field_value(v)
+        for k, v in mock_doc["fields"].items()
+    }
     assert res_eval[0] == Document(id=mock_doc["id"], fields=expected_fields_eval)
+
 
 @pytest.mark.parametrize(
     "mock_doc",
@@ -263,26 +296,39 @@ def test_workflow_with_mocks_and_config__expects__work_with_existing(monkeypatch
                 "id": "1",
                 "title": "Helicopter Crashes in Colombian Drug War, Kills 20",
                 "description": "BOGOTA, Colombia  - A U.S.-made helicopter on an anti-drugs mission crashed in the Colombian jungle on Thursday, killing all 20 Colombian soldiers aboard, the army said.",
-            }
+            },
         }
-    ]
+    ],
 )
-def test_solr_search_engine_fetch_all__expects__results_returned(monkeypatch, vespa_config, mock_doc):
+def test_solr_search_engine_fetch_all__expects__results_returned(
+    monkeypatch, vespa_config, mock_doc
+):
     search_engine = VespaSearchEngine("https://fakeurl")
 
     mock_dict = {
         "id": mock_doc["id"],
-        "fields": {k: VespaSearchEngine._normalize_field_value(v) for k, v in mock_doc["fields"].items()}
+        "fields": {
+            k: VespaSearchEngine._normalize_field_value(v)
+            for k, v in mock_doc["fields"].items()
+        },
     }
 
     call_counter = {"count": 0}
 
     def mock_post(*args, **kwargs):
         call_counter["count"] += 1
-        if call_counter["count"] == 1: # first call is to just get the number of hits, in this case
-            return MockResponseVespaSearch(json_data=[], total_hits=2 * NUMBER_OF_DOCS_EACH_FETCH, status_code=200)
-        elif call_counter["count"] == 2 or call_counter["count"] == 3:  # second and third are to catch actual docs call is to just get the number of hits, in this case
-            return MockResponseVespaSearch(json_data=[mock_doc] * NUMBER_OF_DOCS_EACH_FETCH, status_code=200)
+        if (
+            call_counter["count"] == 1
+        ):  # first call is to just get the number of hits, in this case
+            return MockResponseVespaSearch(
+                json_data=[], total_hits=2 * NUMBER_OF_DOCS_EACH_FETCH, status_code=200
+            )
+        elif (
+            call_counter["count"] == 2 or call_counter["count"] == 3
+        ):  # second and third are to catch actual docs call is to just get the number of hits, in this case
+            return MockResponseVespaSearch(
+                json_data=[mock_doc] * NUMBER_OF_DOCS_EACH_FETCH, status_code=200
+            )
         else:
             return MockResponseVespaSearch(json_data=[], status_code=200)
 

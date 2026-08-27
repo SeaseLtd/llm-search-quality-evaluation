@@ -5,10 +5,14 @@ from pydantic_core import ValidationError
 
 from llm_search_quality_evaluation.shared.logger import configure_logging
 from llm_search_quality_evaluation.dataset_generator.config import Config
-from llm_search_quality_evaluation.shared.search_engines.search_engine_base import NUMBER_OF_DOCS_EACH_FETCH
+from llm_search_quality_evaluation.shared.search_engines.search_engine_base import (
+    NUMBER_OF_DOCS_EACH_FETCH,
+)
 from mocks.elasticsearch import MockResponseElasticsearchEngine
 
-from llm_search_quality_evaluation.shared.search_engines import ElasticsearchSearchEngine
+from llm_search_quality_evaluation.shared.search_engines import (
+    ElasticsearchSearchEngine,
+)
 from llm_search_quality_evaluation.shared.models import Document
 import logging
 
@@ -20,52 +24,72 @@ def elasticsearch_config(resource_folder):
     """Fixture that loads a valid OpenSearch config for unit tests."""
     return Config.load(resource_folder / "good_config_elasticsearch.yaml")
 
+
 @pytest.fixture
 def mock_doc():
     return {
         "_id": "1",
-        '_source': {
+        "_source": {
             "mock_title": ["A first mocked title"],
-            "mock_description": ["A first mocked description"]
-        }
+            "mock_description": ["A first mocked description"],
+        },
     }
+
 
 @pytest.fixture
 def mock_dict(mock_doc):
-    return {
-        'id': mock_doc['_id'],
-        'fields': mock_doc["_source"]
-    }
+    return {"id": mock_doc["_id"], "fields": mock_doc["_source"]}
 
-def test_elasticsearch_search_engine_fetch_for_query_generation__expects__result_returned(monkeypatch, elasticsearch_config, mock_doc, mock_dict):
+
+def test_elasticsearch_search_engine_fetch_for_query_generation__expects__result_returned(
+    monkeypatch, elasticsearch_config, mock_doc, mock_dict
+):
     url = "https://fakeurl"
     search_engine = ElasticsearchSearchEngine(url)
 
     # apply the monkeypatch for requests.post to mock_post
-    monkeypatch.setattr(requests, "post",
-                        lambda *args, **kwargs: MockResponseElasticsearchEngine([mock_doc], status_code=200)
-                        )
+    monkeypatch.setattr(
+        requests,
+        "post",
+        lambda *args, **kwargs: MockResponseElasticsearchEngine(
+            [mock_doc], status_code=200
+        ),
+    )
     # search_engine.extract_documents_to_generate_queries, which contains requests.post, uses the monkeypatch
-    result = search_engine.fetch_for_query_generation(documents_filter=elasticsearch_config.documents_filter,
-                                                      number_of_docs=elasticsearch_config.number_of_docs,
-                                                      doc_fields=elasticsearch_config.doc_fields)
+    result = search_engine.fetch_for_query_generation(
+        documents_filter=elasticsearch_config.documents_filter,
+        number_of_docs=elasticsearch_config.number_of_docs,
+        doc_fields=elasticsearch_config.doc_fields,
+    )
     assert result[0] == Document(**mock_dict)
 
-def test_elasticsearch_search_engine_fetch_for_evaluation__expects__result_returned(monkeypatch, elasticsearch_config, mock_doc, mock_dict):
+
+def test_elasticsearch_search_engine_fetch_for_evaluation__expects__result_returned(
+    monkeypatch, elasticsearch_config, mock_doc, mock_dict
+):
     url = "https://fakeurl"
     search_engine = ElasticsearchSearchEngine(url)
 
     # apply the monkeypatch for requests.post to mock_post
-    monkeypatch.setattr(requests, "post",
-                        lambda *args, **kwargs: MockResponseElasticsearchEngine([mock_doc], status_code=200)
-                        )
+    monkeypatch.setattr(
+        requests,
+        "post",
+        lambda *args, **kwargs: MockResponseElasticsearchEngine(
+            [mock_doc], status_code=200
+        ),
+    )
     # search_engine.extract_documents_to_evaluate_system, which contains requests.post, uses the monkeypatch
-    result = search_engine.fetch_for_evaluation(keyword="and",
-                                                query_template=elasticsearch_config.query_template,
-                                                doc_fields=elasticsearch_config.doc_fields)
+    result = search_engine.fetch_for_evaluation(
+        keyword="and",
+        query_template=elasticsearch_config.query_template,
+        doc_fields=elasticsearch_config.doc_fields,
+    )
     assert result[0] == Document(**mock_dict)
 
-def test_elasticsearch_engine_fetch_all__expects__results_returned(monkeypatch, elasticsearch_config, mock_doc, mock_dict):
+
+def test_elasticsearch_engine_fetch_all__expects__results_returned(
+    monkeypatch, elasticsearch_config, mock_doc, mock_dict
+):
     search_engine = ElasticsearchSearchEngine("https://fakeurl")
 
     call_counter = {"count": 0}
@@ -73,9 +97,13 @@ def test_elasticsearch_engine_fetch_all__expects__results_returned(monkeypatch, 
     def mock_post(*args, **kwargs):
         call_counter["count"] += 1
         if call_counter["count"] == 1:
-            return MockResponseElasticsearchEngine(json_data=[], total_hits=2 * NUMBER_OF_DOCS_EACH_FETCH, status_code=200)
+            return MockResponseElasticsearchEngine(
+                json_data=[], total_hits=2 * NUMBER_OF_DOCS_EACH_FETCH, status_code=200
+            )
         elif call_counter["count"] == 2 or call_counter["count"] == 3:
-            return MockResponseElasticsearchEngine(json_data=[mock_doc] * NUMBER_OF_DOCS_EACH_FETCH, status_code=200)
+            return MockResponseElasticsearchEngine(
+                json_data=[mock_doc] * NUMBER_OF_DOCS_EACH_FETCH, status_code=200
+            )
         else:
             return MockResponseElasticsearchEngine(json_data=[], status_code=200)
 
@@ -92,10 +120,17 @@ def test_elasticsearch_engine_fetch_all__expects__results_returned(monkeypatch, 
     assert len(doc_list) == 2 * NUMBER_OF_DOCS_EACH_FETCH
 
 
-def test_elasticsearch_search_engine_negative_post_fetch_for_query_generation__expects__raises_http_error(monkeypatch, elasticsearch_config):
+def test_elasticsearch_search_engine_negative_post_fetch_for_query_generation__expects__raises_http_error(
+    monkeypatch, elasticsearch_config
+):
     for status_code in [400, 401, 402, 403, 500]:
-        monkeypatch.setattr(requests, "post", lambda *args, **kwargs: MockResponseElasticsearchEngine([],
-                                                                                                    status_code=status_code))
+        monkeypatch.setattr(
+            requests,
+            "post",
+            lambda *args, **kwargs: MockResponseElasticsearchEngine(
+                [], status_code=status_code
+            ),
+        )
 
         search_engine = ElasticsearchSearchEngine("https://fakeurl")
 
@@ -103,14 +138,21 @@ def test_elasticsearch_search_engine_negative_post_fetch_for_query_generation__e
             search_engine.fetch_for_query_generation(
                 documents_filter=elasticsearch_config.documents_filter,
                 number_of_docs=elasticsearch_config.number_of_docs,
-                doc_fields=elasticsearch_config.doc_fields
+                doc_fields=elasticsearch_config.doc_fields,
             )
 
 
-def test_elasticsearch_search_engine_negative_post_fetch_for_evaluation__expects__raises_http_error(monkeypatch, elasticsearch_config):
+def test_elasticsearch_search_engine_negative_post_fetch_for_evaluation__expects__raises_http_error(
+    monkeypatch, elasticsearch_config
+):
     for status_code in [400, 401, 402, 403, 500]:
-        monkeypatch.setattr(requests, "post", lambda *args, **kwargs: MockResponseElasticsearchEngine([],
-                                                                                                    status_code=status_code))
+        monkeypatch.setattr(
+            requests,
+            "post",
+            lambda *args, **kwargs: MockResponseElasticsearchEngine(
+                [], status_code=status_code
+            ),
+        )
 
         search_engine = ElasticsearchSearchEngine("https://fakeurl")
 
@@ -118,8 +160,9 @@ def test_elasticsearch_search_engine_negative_post_fetch_for_evaluation__expects
             search_engine.fetch_for_evaluation(
                 keyword="and",
                 query_template=elasticsearch_config.query_template,
-                doc_fields=elasticsearch_config.doc_fields
+                doc_fields=elasticsearch_config.doc_fields,
             )
+
 
 def test_elasticsearch_search_engine_bad_url__expects__raises_validation_error():
     with pytest.raises(ValidationError):
@@ -128,7 +171,10 @@ def test_elasticsearch_search_engine_bad_url__expects__raises_validation_error()
 
 # --- extra_placeholders tests ---
 
-def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects__json_array(monkeypatch, tmp_path):
+
+def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects__json_array(
+    monkeypatch, tmp_path
+):
     """Unquoted $vector in template -> parsed payload has a real JSON array."""
     template = tmp_path / "knn.json"
     template.write_text('{"knn": {"field": "vec", "query_vector": $vector}}')
@@ -136,9 +182,11 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects
     engine = ElasticsearchSearchEngine("https://fakeurl")
 
     captured = {}
+
     def fake_search(payload):
         captured["payload"] = payload
         return []
+
     monkeypatch.setattr(engine, "_search", fake_search)
 
     engine.fetch_for_evaluation(
@@ -150,7 +198,9 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_unquoted__expects
     assert captured["payload"]["knn"]["query_vector"] == [1.0, 2.0]
 
 
-def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__string(monkeypatch, tmp_path):
+def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__string(
+    monkeypatch, tmp_path
+):
     """Quoted $vector in template -> parsed payload has a string value."""
     template = tmp_path / "knn.json"
     template.write_text('{"q": "$vector"}')
@@ -158,9 +208,11 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__
     engine = ElasticsearchSearchEngine("https://fakeurl")
 
     captured = {}
+
     def fake_search(payload):
         captured["payload"] = payload
         return []
+
     monkeypatch.setattr(engine, "_search", fake_search)
 
     engine.fetch_for_evaluation(
@@ -173,7 +225,9 @@ def test_elasticsearch_fetch_for_evaluation_extra_placeholders_quoted__expects__
     assert isinstance(captured["payload"]["q"], str)
 
 
-def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects__no_change(monkeypatch, tmp_path):
+def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects__no_change(
+    monkeypatch, tmp_path
+):
     """Omitting extra_placeholders leaves existing behavior unchanged."""
     template = tmp_path / "simple.json"
     template.write_text('{"query": {"match": {"title": "$query"}}}')
@@ -181,9 +235,11 @@ def test_elasticsearch_fetch_for_evaluation_without_extra_placeholders__expects_
     engine = ElasticsearchSearchEngine("https://fakeurl")
 
     captured = {}
+
     def fake_search(payload):
         captured["payload"] = payload
         return []
+
     monkeypatch.setattr(engine, "_search", fake_search)
 
     engine.fetch_for_evaluation(

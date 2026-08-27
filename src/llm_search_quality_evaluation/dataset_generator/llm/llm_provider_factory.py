@@ -27,8 +27,12 @@ def build_openai(config: LLMConfig) -> BaseChatModel:
     if not key:
         log.error("OpenAI API key not set %s in the env", config.api_key_env)
         raise ValueError("OpenAI API key not set.")
-    log.debug("Building OpenAI ChatModel using name=%s, model=%s, reasoning_effort=%s",
-              config.name, config.model, config.reasoning_effort)
+    log.debug(
+        "Building OpenAI ChatModel using name=%s, model=%s, reasoning_effort=%s",
+        config.name,
+        config.model,
+        config.reasoning_effort,
+    )
     if config.reasoning_effort is None:
         return ChatOpenAI(
             model=config.model,
@@ -48,8 +52,12 @@ def build_gemini(config: LLMConfig) -> BaseChatModel:
     if not key:
         log.error("Google Gemini API key not set %s in the env", config.api_key_env)
         raise ValueError("Google Gemini API key not set.")
-    log.debug("Building Google Gemini ChatModel using name=%s, model=%s, reasoning_effort=%s",
-              config.name, config.model, config.reasoning_effort)
+    log.debug(
+        "Building Google Gemini ChatModel using name=%s, model=%s, reasoning_effort=%s",
+        config.name,
+        config.model,
+        config.reasoning_effort,
+    )
     return ChatGoogleGenerativeAI(
         model=config.model,
         google_api_key=key,
@@ -57,7 +65,7 @@ def build_gemini(config: LLMConfig) -> BaseChatModel:
             "thinking_config": {
                 "thinking_budget": config.reasoning_effort,
             }
-        }
+        },
     )
 
 
@@ -69,8 +77,11 @@ class LazyLLM:
     @property
     def llm(self) -> BaseChatModel:
         if self._llm is None:
-            log.info("Initializing LLM for the first time: provider=%s, model=%s",
-                    self.config.name, self.config.model)
+            log.info(
+                "Initializing LLM for the first time: provider=%s, model=%s",
+                self.config.name,
+                self.config.model,
+            )
             self._llm = LLMServiceFactory.build(self.config)
         return self._llm
 
@@ -98,9 +109,17 @@ class LLMServiceFactory:
     @classmethod
     def build_lazy(cls, config: LLMConfig) -> LazyLLM:
         if cls._cached_lazy_llm is None:
-            log.debug("Creating lazy LLM wrapper for: provider=%s, model=%s", config.name, config.model)
+            log.debug(
+                "Creating lazy LLM wrapper for: provider=%s, model=%s",
+                config.name,
+                config.model,
+            )
             cls._cached_lazy_llm = LazyLLM(config)
         else:
-            log.debug("Reusing cached lazy LLM wrapper for: provider=%s, model=%s", config.name, config.model)
+            log.debug(
+                "Reusing cached lazy LLM wrapper for: provider=%s, model=%s",
+                config.name,
+                config.model,
+            )
 
         return cls._cached_lazy_llm
