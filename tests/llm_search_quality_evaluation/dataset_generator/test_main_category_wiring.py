@@ -18,7 +18,7 @@ def test_main__category_only_skips_llm_gen_and_still_fetches_seeds_for_cartesian
         generate_queries_from_documents=False,
         enable_cartesian_product=True,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+            {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
         ],
     )
 
@@ -56,7 +56,7 @@ def test_main__engine_discovery_with_cartesian_produces_ratings(tmp_path, monkey
         generate_queries_from_documents=False,
         enable_cartesian_product=True,
         category_queries=[
-            {"fields": ["genres"], "values_query_template_file": str(facet),
+            {"field": "genres", "values_query_template_file": str(facet),
              "query_text_template_file": str(template)},
         ],
     )
@@ -111,7 +111,7 @@ def test_main__category_query_rated_against_seed_doc_via_cartesian(tmp_path, mon
         generate_queries_from_documents=False,
         enable_cartesian_product=True,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+            {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
         ],
     )
 
@@ -170,7 +170,7 @@ def test_main__llm_gen_reuses_seed_docs_no_double_fetch(tmp_path, monkeypatch):
         generate_queries_from_documents=True,
         enable_cartesian_product=True,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+            {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
         ],
         num_queries_needed=10,
         number_of_docs=1,
@@ -198,7 +198,7 @@ def test_main__category_fills_budget_then_llm_gen_skipped(tmp_path, monkeypatch)
         generate_queries_from_documents=True,
         enable_cartesian_product=True,
         category_queries=[
-            {"fields": ["genres"],
+            {"field": "genres",
              "values": ["comedy", "action", "horror"],
              "query_text_template_file": str(template)},
         ],

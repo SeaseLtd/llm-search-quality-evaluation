@@ -2,27 +2,13 @@ from typing import Optional
 
 
 class LLMScoreResponse:
-    """
-    Parses and validates an LLM score response.
-    """
+    """Parses and validates an LLM score response."""
+
     def __init__(self, score: int, scale: str = "graded", explanation: Optional[str] = None):
-        """
-        Initializes the object by validating the score.
+        """Validate the score and explanation.
 
-        Args:
-            score:      The relevance score.
-            scale:      The relevance scale, either 'binary' {0,1} or 'graded' {0,1,2}.
-            explanation:  Explanation for the generated score or None. Blank /
-                whitespace-only strings are normalized to None — providers
-                sometimes return ``""`` instead of omitting the field, and the
-                batch scoring contract already permits per-item explanations to
-                be missing, so treating ``""`` as "missing" is semantically
-                faithful and avoids raising a non-retryable ValueError out of
-                the batch result-assembly path.
-
-        Raises:
-            ValueError: If the score is not valid for the given scale or if
-                ``explanation`` is provided and is not a string.
+        Raises ValueError for an invalid scale or score, or a non-string explanation.
+        Blank or whitespace-only explanations are normalized to None.
         """
         if scale not in ["binary", "graded"]:
             raise ValueError(f"Invalid scale: {scale}. Must be 'binary' or 'graded'.")
@@ -41,8 +27,5 @@ class LLMScoreResponse:
         self.explanation = explanation
 
     def get_score(self) -> int:
-        """
-        Returns the validated score.
-        """
+        """Return the validated score."""
         return self.score
-

@@ -45,12 +45,12 @@ one fields, the documents are filtered for both fields (AND-like)
 > and use the existing cartesian-product and top-K expansion paths for scoring.
 >
 >   Each entry has:
->   - **`fields`** — array of field names. Currently only `fields[0]` is read; every field listed must also appear in
->     `doc_fields` so the LLM scorer has evidence to grade against.
+>   - **`field`** — name of the field whose values become queries. It must also appear in `doc_fields` so the LLM
+>     scorer has evidence to grade against.
 >   - **Where the values come from** — exactly one of:
 >     - **`values`** — an explicit list typed by the user (e.g. `["comedy", "action"]`).
 >     - **`values_query_template_file`** — a path to an engine-native facet / aggregation / grouping template. The
->       engine runs that query at generation time and uses its distinct values for `fields[0]`. The template's limit
+>       engine runs that query at generation time and uses its distinct values for `field`. The template's limit
 >       (Solr `facet.limit`, ES/OS `terms.size`, Vespa grouping `max(N)`) is the only knob.
 >   - **`query_text_template_file`** (Optional) — a plain-text natural-language template wrapping each value. If
 >     omitted, each value is the query text directly (`comedy` → query `"comedy"`). If provided, the file's contents
@@ -62,12 +62,12 @@ one fields, the documents are filtered for both fields (AND-like)
 >   ```yaml
 >   # Bare values (queries: "comedy", "action", "horror", "drama")
 >   category_queries:
->     - fields: ["genres"]
+>     - field: "genres"
 >       values: ["comedy", "action", "horror", "drama"]
 >
 >   # Wrapped via template (queries: "comedy movies", ...) — Solr placeholder
 >   category_queries:
->     - fields: ["genres"]
+>     - field: "genres"
 >       values: ["comedy", "action", "horror", "drama"]
 >       query_text_template_file: "examples/templates/genre_query.tmpl"  # contents: $query movies
 >   ```
@@ -79,7 +79,7 @@ one fields, the documents are filtered for both fields (AND-like)
 >     `rows`). The engine injects `wt=json` and GETs `/select` with `params=<the dict>`. Not a Solr JSON Request API
 >     body. Sample: `examples/templates/genre_facet_solr.json`.
 >   - **Elasticsearch / OpenSearch** — the file is a full JSON request body POSTed to `_search`. **Convention:** in the
->     *request* body the terms aggregation is declared under `aggs` with a name that must equal `fields[0]` (e.g.
+>     *request* body the terms aggregation is declared under `aggs` with a name that must equal `field` (e.g.
 >     `genres` in the shipped samples); Elasticsearch/OpenSearch return buckets under *response* key `aggregations`
 >     with that same name. The agg's internal `terms.field` may be a keyword subfield (`genres.keyword`) without
 >     requiring `genres.keyword` to be in `doc_fields`. Keyed-bucket aggregations (`"keyed": true`) are not supported.
@@ -92,18 +92,18 @@ one fields, the documents are filtered for both fields (AND-like)
 >   ```yaml
 >   # Solr
 >   category_queries:
->     - fields: ["genres"]
+>     - field: "genres"
 >       values_query_template_file: "examples/templates/genre_facet_solr.json"
 >       query_text_template_file: "examples/templates/genre_query.tmpl"  # optional
 >
 >   # Elasticsearch / OpenSearch
 >   category_queries:
->     - fields: ["genres"]
+>     - field: "genres"
 >       values_query_template_file: "examples/templates/genre_facet_es.json"
 >
 >   # Vespa
 >   category_queries:
->     - fields: ["genres"]
+>     - field: "genres"
 >       values_query_template_file: "examples/templates/genre_facet_vespa.yql"
 >   ```
 >
@@ -114,6 +114,9 @@ one fields, the documents are filtered for both fields (AND-like)
 >   strings; container-typed bucket keys (nested aggregations) raise rather than landing as nonsense queries. If more
 >   category values are configured (or discovered) than `num_queries_needed`, the surplus is added to the datastore
 >   but skipped at scoring time.
+>
+>   **Config change:** each entry takes a single `field: "genres"`. Earlier configs used a one-element list
+>   (`fields: ["genres"]`) and must be updated — a list is now rejected at config load.
 > - **num_queries_needed**: Total number of queries to generate, including predefined queries, if any (e.g., 20).
 > When the in-memory queries (user-supplied + category + LLM-generated + previously-cached) exceed this number, the
 > selection is prioritized so that fresh sources from this run win over cached entries. Priority order:

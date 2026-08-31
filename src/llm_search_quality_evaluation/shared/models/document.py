@@ -7,15 +7,7 @@ from llm_search_quality_evaluation.shared.utils import is_json_serializable
 log = logging.getLogger(__name__)
 
 class Document(BaseModel):
-    """
-    Represents a document with a unique identifier, and fields.
-    """
-
-    # [Optional] apply strict model config:
-    # extra='forbid' - catch unexpected fields -> Raise
-    # validate_assignment=True - re-validate on mutation.
-    # frozen=True - immutability after creation.
-    # model_config = ConfigDict(extra='forbid', validate_assignment=True, frozen=True)
+    """Represents a document with a unique identifier and fields."""
 
     model_config = ConfigDict(extra='ignore')
 

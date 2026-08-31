@@ -13,8 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class CategoryQuerySource(BaseModel):
-    fields: List[str] = Field(..., min_length=1,
-                              description="Fields used to derive category values. Only fields[0] is read.")
+    field: str = Field(..., description="Field whose values are used to derive category queries.")
     values: Optional[List[str]] = Field(
         None,
         min_length=1,
@@ -25,7 +24,7 @@ class CategoryQuerySource(BaseModel):
         None,
         description="Optional path to an engine-native value-discovery template "
                     "(Solr request-params JSON / ES or OpenSearch JSON request body / Vespa YQL). "
-                    "When set, the engine returns the distinct values for fields[0] at run time. "
+                    "When set, the engine returns the distinct values for field at run time. "
                     "Mutually exclusive with values (set exactly one)."
     )
     query_text_template_file: Optional[FilePath] = Field(
@@ -35,11 +34,11 @@ class CategoryQuerySource(BaseModel):
                     "If omitted, each value is used directly as the query text (e.g. 'comedy', 'action')."
     )
 
-    @field_validator('fields')
+    @field_validator('field')
     @classmethod
-    def check_no_empty_fields(cls, value_field: List[str]) -> List[str]:
-        if any(not f.strip() for f in value_field):
-            raise ValueError("category_queries.fields cannot contain empty strings.")
+    def check_field_not_empty(cls, value_field: str) -> str:
+        if not value_field.strip():
+            raise ValueError("category_queries.field cannot be empty.")
         return value_field
 
     @field_validator('values')
@@ -52,14 +51,6 @@ class CategoryQuerySource(BaseModel):
         if any(not v.strip() for v in value_field):
             raise ValueError("category_queries.values cannot contain empty strings.")
         return value_field
-
-    @model_validator(mode="after")
-    def validate_single_field(self) -> "CategoryQuerySource":
-        if len(self.fields) > 1:
-            raise ValueError(
-                "category_queries.fields with more than one entry is not yet supported."
-            )
-        return self
 
     @model_validator(mode="after")
     def validate_exactly_one_value_source(self) -> "CategoryQuerySource":
@@ -212,15 +203,15 @@ class Config(BaseModel):
 
     @property
     def search_engine_collection_endpoint(self) -> HttpUrl:
-        """
-        Returns the collection endpoint URL for the search engine.
-        For Vespa: uses vespa_schema in the endpoint, defaulting to collection_name.
+        """Collection endpoint URL: vespa_schema for Vespa, collection_name otherwise.
+
+        ``default_vespa_schema_to_collection_name`` has already resolved vespa_schema
+        at config load, so no fallback is applied here.
         """
         if self.search_engine_type == "vespa":
-            schema_name = self.vespa_schema or self.collection_name
-            return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", schema_name + "/"))
+            assert self.vespa_schema is not None
+            return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.vespa_schema + "/"))
         else:
-            # For other engines: use collection_name
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.collection_name + "/"))
 
     @model_validator(mode="after")
@@ -245,10 +236,9 @@ class Config(BaseModel):
             return self
         doc_fields_set = set(self.doc_fields)
         for source in self.category_queries:
-            missing = [f for f in source.fields if f not in doc_fields_set]
-            if missing:
+            if source.field not in doc_fields_set:
                 raise ValueError(
-                    f"category_queries field(s) {missing} must also be present in doc_fields. "
+                    f"category_queries field '{source.field}' must also be present in doc_fields. "
                     f"The LLM scorer only sees fields fetched into the Document."
                 )
         return self

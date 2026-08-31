@@ -33,17 +33,8 @@ class BaseSearchEngine(ABC):
         return ''.join(sb)
 
     def fetch_all(self, doc_fields: List[str]) -> Iterator[Document]:
-        """Extract all documents from search engine in batches.
-
-        Yields batches of documents instead of loading everything in memory.
-
-        Args:
-            doc_fields: Fields to extract from documents
-
-        Yields:
-            List[Document]: Batch of documents
-        """
-        # Now this is relying on fetch_for_query_generation to avoid duplicate code. Might be changed in the future
+        """Yield all documents in fixed-size batches without loading the full result
+        into memory."""
         start: int = 0
         total_hits: int = self._get_total_hits(self._fetch_all_payload)
         while start < total_hits:
@@ -57,9 +48,6 @@ class BaseSearchEngine(ABC):
                 break
             for doc in batch:
                 yield doc
-            # if we didn't reach the end of the docs, then len(batch) == NUMBER_OF_DOCS_EACH_FETCH if we reached the
-            # end of the docs. then len(batch) <= NUMBER_OF_DOCS_EACH_FETCH -> next iteration we exit the loop since
-            # we are adding NUMBER_OF_DOCS_EACH_FETCH (not len(batch)) and start becomes greater than total_hits
             start += NUMBER_OF_DOCS_EACH_FETCH
 
 
@@ -119,33 +107,11 @@ class BaseSearchEngine(ABC):
 
     @abstractmethod
     def fetch_field_values(self, values_query_template: Path | str, field: str) -> List[str]:
-        """Run an engine-native facet/aggregation/grouping payload and return the distinct values
-        produced for ``field``.
+        """Run an engine-native facet, aggregation, or grouping template.
 
-        Per-engine transport (deliberately different so each engine matches its existing
-        retrieval convention):
-
-        - **Solr** — the template is a JSON dict of Solr request *parameters* (``q``, ``facet``,
-          ``facet.field``, ``facet.limit``, ``rows``, ...). Parsed with ``_parse_query_template``,
-          ``wt=json`` is injected, and the call is ``GET /select?<params>`` (NOT a Solr JSON
-          Request API body).
-        - **Elasticsearch / OpenSearch** — the template is the full JSON request body, POSTed
-          to ``_search`` unchanged.
-        - **Vespa** — the template is YQL only; the implementation wraps it with
-          ``{"yql": <file>, "hits": 0, "presentation.format": "json"}`` and POSTs.
-
-        The template's limit (Solr ``facet.limit``, ES/OS terms ``size``, Vespa grouping
-        ``max(N)``) is the only knob — there is no separate config option.
-
-        Return values are normalized to non-empty stripped strings via
-        ``shared.utils.normalize_discovered_field_values`` (containers raise).
-
-        Empty result (response path exists but contains zero buckets/values) → return ``[]``
-        *silently*. The single warning lives in ``add_category_queries`` so it carries full
-        source context (``field``, ``values_query_template_file``).
-
-        Missing/wrong-typed/wrong-key response path → raise ``ValueError`` with engine context.
-        HTTP/JSON parse errors propagate or are wrapped with engine context.
+        Return distinct ``field`` values as non-empty, stripped strings. An empty
+        result returns ``[]`` silently; the caller warns. Malformed response paths
+        raise ``ValueError``; HTTP and JSON errors propagate with engine context.
         """
         pass
 
@@ -164,4 +130,3 @@ class BaseSearchEngine(ABC):
     def _fetch_all_payload(self) -> Dict[str, Any]:
         """Payload to fetch all documents from the search engine."""
         pass
-

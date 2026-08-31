@@ -11,6 +11,7 @@ Key invariants:
 """
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from types import SimpleNamespace
@@ -171,3 +172,34 @@ def test_query_gen__parallel_workers__outer_budget_guard_stops_applying():
     assert stored_texts == {"q-d0-a", "q-d0-b"}
     # Each stored query is rated only against its own seed doc.
     assert len(ds.get_ratings()) == 2
+
+
+def test_query_gen__parallel_workers__post_saturation_worker_failure_is_logged(caplog):
+    """A worker that raises after the budget is full must not be silent.
+
+    `concurrent.futures.Future` does not log unretrieved exceptions, so without an
+    explicit done-callback these failures vanish. The run itself must still succeed
+    (the sequential path would never have started those calls).
+    """
+    seed_docs = [Document(id=f"d{i}", fields={"title": f"t{i}"}) for i in range(3)]
+
+    class _FailAfterFirstDoc:
+        def generate_queries(self, doc: Document, num_queries_per_doc: int, max_query_terms):
+            if doc.id == "d0":
+                return SimpleNamespace(get_queries=lambda: ["q-d0-a", "q-d0-b"])
+            raise RuntimeError(f"llm blew up on {doc.id}")
+
+    ds = DataStore(ignore_saved_data=True)
+    for d in seed_docs:
+        ds.add_document(d)
+
+    with caplog.at_level(logging.WARNING):
+        generate_and_add_queries_from_documents(
+            _config(llm_max_workers=3, num_queries_needed=2, number_of_docs=3),
+            ds, _FailAfterFirstDoc(), seed_docs,
+        )
+
+    assert {q.text for q in ds.get_queries()} == {"q-d0-a", "q-d0-b"}
+    failures = [r.getMessage() for r in caplog.records if "worker failed" in r.getMessage()]
+    assert len(failures) == 2
+    assert all("llm blew up on" in msg for msg in failures)

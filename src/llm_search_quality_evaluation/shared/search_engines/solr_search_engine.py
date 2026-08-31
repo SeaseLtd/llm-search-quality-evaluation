@@ -60,18 +60,7 @@ class SolrSearchEngine(BaseSearchEngine):
                                    documents_filter: Union[None, List[Dict[str, List[str]]]],
                                    number_of_docs: int, doc_fields: List[str], start: int = 0) \
             -> List[Document]:
-        """
-        Fetches a set of documents from Solr for the purpose of query generation.
-
-        Args:
-            documents_filter (Union[None, List[Dict[str, List[str]]]]): Optional filter constraints for fields and their allowed values.
-            number_of_docs (int): Number of documents to retrieve.
-            doc_fields (List[str]): List of field names to include in the output.
-            start (int, optional): Starting index of the query. Defaults to 0.
-
-        Returns:
-            List[Document]: A list of retrieved documents as `Document` objects.
-        """
+        """Fetch a page of Solr documents for query generation."""
         log.info(f"Fetching {number_of_docs} documents (rows) from the search engine for query generation")
 
         payload: Dict[str, Any] = self._fetch_all_payload
@@ -95,17 +84,8 @@ class SolrSearchEngine(BaseSearchEngine):
         return self._search(payload)
 
     def fetch_for_evaluation(self, query_template: Path | str, doc_fields: List[str], keyword: str="*:*", extra_placeholders: Dict[str, str] | None = None) -> List[Document]:
-        """
-        Executes a search using a query template for evaluation purposes.
-
-        Args:
-            query_template (Path): Path variable pointing to the file with the payload a placeholder for the keyword.
-            doc_fields (List[str]): List of fields to include in the response.
-            keyword (str, optional): Keyword to inject into the query template. Defaults to "*:*".
-
-        Returns:
-            List[Document]: A list of documents matching the query.
-        """
+        """Run a Solr evaluation template after substituting extra placeholders verbatim
+        and replacing ``$query`` with the escaped keyword."""
         log.info("Fetching documents (rows) based on query template for query evaluation")
 
         query_template = Path(query_template)
@@ -120,8 +100,7 @@ class SolrSearchEngine(BaseSearchEngine):
 
         The template is a flat JSON dict of Solr request parameters. ``wt=json`` is injected
         the same way ``_search`` does, and the request goes out as ``GET /select?<params>``.
-        Response navigation: ``facet_counts.facet_fields.<field>`` is a flat alternating
-        ``[v0, c0, v1, c1, ...]`` array; we drop counts and keep the values.
+        Response nodes are type-checked so malformed responses raise ``ValueError``.
         """
         payload: Dict[str, Any] = self._parse_query_template(values_query_template)
         payload['wt'] = 'json'
@@ -136,24 +115,46 @@ class SolrSearchEngine(BaseSearchEngine):
             log.error(f"Solr value-discovery query failed: {e}")
             raise
 
-        body = response.json()
-        fc = body.get("facet_counts")
-        if fc is None or "facet_fields" not in fc or field not in fc["facet_fields"]:
+        return self._list_values_from_facet_fields(response.json(), field)
+
+    @staticmethod
+    def _list_values_from_facet_fields(body: Any, field: str) -> List[str]:
+        """Extract values from Solr's alternating facet value/count array."""
+        if not isinstance(body, dict):
+            raise ValueError(
+                f"Solr value-discovery: expected a JSON object response, "
+                f"got {type(body).__name__}."
+            )
+        facet_counts = body.get("facet_counts")
+        if not isinstance(facet_counts, dict):
+            raise ValueError(
+                f"Solr value-discovery: expected facet_counts to be an object in response, "
+                f"got {type(facet_counts).__name__}."
+            )
+        facet_fields = facet_counts.get("facet_fields")
+        if not isinstance(facet_fields, dict):
+            raise ValueError(
+                f"Solr value-discovery: expected facet_counts.facet_fields to be an object, "
+                f"got {type(facet_fields).__name__}."
+            )
+        if field not in facet_fields:
             raise ValueError(
                 f"Solr value-discovery: expected facet_counts.facet_fields.{field} in response."
             )
-        arr = fc["facet_fields"][field]
-        if not isinstance(arr, list):
+        values_and_counts = facet_fields[field]
+        if not isinstance(values_and_counts, list):
             raise ValueError(
                 f"Solr value-discovery: facet_counts.facet_fields.{field} must be a list, "
-                f"got {type(arr).__name__}."
+                f"got {type(values_and_counts).__name__}."
             )
-        if len(arr) % 2 != 0:
+        if len(values_and_counts) % 2 != 0:
             raise ValueError(
                 f"Solr value-discovery: facet_counts.facet_fields.{field} must have even length "
-                f"(alternating value/count), got len={len(arr)}."
+                f"(alternating value/count), got len={len(values_and_counts)}."
             )
-        return normalize_discovered_field_values(arr[i] for i in range(0, len(arr), 2))
+        return normalize_discovered_field_values(
+            values_and_counts[i] for i in range(0, len(values_and_counts), 2)
+        )
 
     def _search(self, payload: Dict[str, Any]) -> List[Document]:
         """

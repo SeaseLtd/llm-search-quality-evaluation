@@ -2,9 +2,11 @@ import json
 import logging
 import random
 import time
-from typing import Dict, Iterable, List, Optional
+from collections import Counter
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import Runnable
 from pydantic import BaseModel, ValidationError
 
 from llm_search_quality_evaluation.dataset_generator.models.query_response import LLMQueryResponse
@@ -271,58 +273,29 @@ class LLMService:
         # `last_exc` carries the cause for the eventual `raise ... from`.
         # Invocation failures land here as the real provider exception;
         # response-contract failures land here as a synthetic
-        # `_BatchResponseContractError` so the final BatchScoringError has a
-        # uniform `__cause__` regardless of failure class — keeps tracebacks
-        # and any tooling that inspects `.__cause__` consistent across the
-        # four conditions in the response-id contract.
+        # `_BatchResponseContractError` raised by `_attempt_batch` so the final
+        # BatchScoringError has a uniform `__cause__` regardless of failure
+        # class — keeps tracebacks and any tooling that inspects `.__cause__`
+        # consistent across the four conditions in the response-id contract.
         last_exc: Optional[BaseException] = None
         total_attempts = max_retries + 1
         for attempt in range(total_attempts):
             try:
-                model_response = structured_llm.invoke(messages)
-            except Exception as e:  # ValidationError, network, rate-limit, ...
+                return self._attempt_batch(
+                    structured_llm, messages, asked_id_set, relevance_scale, explanation
+                )
+            except Exception as e:  # contract violation, ValidationError, network, ...
                 last_exc = e
-                last_reason = f"invocation failure: {type(e).__name__}: {e}"
+                last_reason = (
+                    str(e) if isinstance(e, _BatchResponseContractError)
+                    else f"invocation failure: {type(e).__name__}: {e}"
+                )
                 log.warning(
                     "[generate_scores_batch] %s query_id=%s batch_size=%d attempt=%d/%d",
                     last_reason, query_id, len(asked_ids), attempt + 1, total_attempts,
                 )
                 if attempt < total_attempts - 1:
                     self._sleep_backoff(attempt)
-                continue
-
-            returned_ids = [item.doc_id for item in model_response.ratings]  # type: ignore[union-attr]
-            returned_id_set = set(returned_ids)
-
-            if len(returned_ids) != len(returned_id_set):
-                duplicates = sorted(
-                    {rid for rid in returned_ids if returned_ids.count(rid) > 1}
-                )
-                last_reason = f"duplicate doc_id(s) in response: {duplicates}"
-                last_exc = _BatchResponseContractError(last_reason)
-            elif missing := asked_id_set - returned_id_set:
-                last_reason = f"missing doc_id(s) in response: {sorted(missing)}"
-                last_exc = _BatchResponseContractError(last_reason)
-            elif unknown := returned_id_set - asked_id_set:
-                last_reason = f"unknown doc_id(s) in response: {sorted(unknown)}"
-                last_exc = _BatchResponseContractError(last_reason)
-            else:
-                # Clean response: build the result dict.
-                result: Dict[str, LLMScoreResponse] = {}
-                for item in model_response.ratings:  # type: ignore[union-attr]
-                    result[item.doc_id] = LLMScoreResponse(
-                        score=item.score,
-                        scale=relevance_scale,
-                        explanation=(item.explanation if explanation else None),
-                    )
-                return result
-
-            log.warning(
-                "[generate_scores_batch] %s query_id=%s batch_size=%d attempt=%d/%d",
-                last_reason, query_id, len(asked_ids), attempt + 1, total_attempts,
-            )
-            if attempt < total_attempts - 1:
-                self._sleep_backoff(attempt)
 
         err = BatchScoringError(
             query_id=query_id,
@@ -331,6 +304,48 @@ class LLMService:
             reason=last_reason,
         )
         raise err from last_exc
+
+    @staticmethod
+    def _attempt_batch(
+        structured_llm: Runnable[Any, Any],
+        messages: List[HumanMessage],
+        asked_id_set: Set[str],
+        relevance_scale: str,
+        explanation: bool,
+    ) -> Dict[str, LLMScoreResponse]:
+        """Run one batch attempt: invoke the LLM and validate the doc_id contract.
+
+        Returns the per-doc responses on a clean answer. Both failure classes leave
+        as exceptions, so the retry loop has a single epilogue: invocation errors
+        (validation, network, rate-limit) propagate as-is from the provider, while a
+        response that violates the doc_id contract — duplicate, missing, or unknown
+        ids — raises :class:`_BatchResponseContractError` whose message is the reason
+        string the caller logs.
+        """
+        model_response = structured_llm.invoke(messages)
+
+        id_counts = Counter(item.doc_id for item in model_response.ratings)
+        returned_id_set = set(id_counts)
+
+        if duplicates := sorted(rid for rid, count in id_counts.items() if count > 1):
+            raise _BatchResponseContractError(f"duplicate doc_id(s) in response: {duplicates}")
+        if missing := asked_id_set - returned_id_set:
+            raise _BatchResponseContractError(
+                f"missing doc_id(s) in response: {sorted(missing)}"
+            )
+        if unknown := returned_id_set - asked_id_set:
+            raise _BatchResponseContractError(
+                f"unknown doc_id(s) in response: {sorted(unknown)}"
+            )
+
+        return {
+            item.doc_id: LLMScoreResponse(
+                score=item.score,
+                scale=relevance_scale,
+                explanation=(item.explanation if explanation else None),
+            )
+            for item in model_response.ratings
+        }
 
     @staticmethod
     def _sleep_backoff(attempt: int) -> None:

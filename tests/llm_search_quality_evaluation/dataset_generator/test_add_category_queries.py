@@ -17,7 +17,7 @@ def test_add_category_queries__renders_and_dedupes(tmp_path):
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy", "action", "comedy"],
+            {"field": "genres", "values": ["comedy", "action", "comedy"],
              "query_text_template_file": str(template)},
         ],
     )
@@ -42,7 +42,7 @@ def test_add_category_queries__bare_values_when_template_omitted(tmp_path):
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy", "action"]},
+            {"field": "genres", "values": ["comedy", "action"]},
         ],
     )
     ds = DataStore(path=tmp_path / "ds.json", ignore_saved_data=True)
@@ -60,7 +60,7 @@ def test_add_category_queries__engine_discovery_calls_fetch_field_values_once_pe
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values_query_template_file": str(facet)},
+            {"field": "genres", "values_query_template_file": str(facet)},
         ],
     )
     ds = DataStore(path=tmp_path / "ds.json", ignore_saved_data=True)
@@ -83,7 +83,7 @@ def test_add_category_queries__engine_discovery_renders_through_query_text_templ
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values_query_template_file": str(facet),
+            {"field": "genres", "values_query_template_file": str(facet),
              "query_text_template_file": str(template)},
         ],
     )
@@ -101,8 +101,8 @@ def test_add_category_queries__engine_discovery_empty_result_warns_and_skips_sou
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values_query_template_file": str(facet)},
-            {"fields": ["genres"], "values": ["fallback"],
+            {"field": "genres", "values_query_template_file": str(facet)},
+            {"field": "genres", "values": ["fallback"],
              "query_text_template_file": str(template)},
         ],
     )
@@ -122,7 +122,7 @@ def test_add_category_queries__explicit_values_short_circuit_does_not_call_engin
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy"]},
+            {"field": "genres", "values": ["comedy"]},
         ],
     )
     ds = DataStore(path=tmp_path / "ds.json", ignore_saved_data=True)
@@ -138,7 +138,7 @@ def test_add_category_queries__rendered_duplicates_dedupe(tmp_path):
     cfg = make_config(
         tmp_path,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy", "comedy "],
+            {"field": "genres", "values": ["comedy", "comedy "],
              "query_text_template_file": str(template)},
         ],
     )

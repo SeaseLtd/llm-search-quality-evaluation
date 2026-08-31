@@ -47,7 +47,7 @@ def test_category_queries__valid_config_renders_expected_query_strings(tmp_path)
     cfg = Config(
         **_base_cfg_kwargs(tmp_path),
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy", "action"], "query_text_template_file": str(template)},
+            {"field": "genres", "values": ["comedy", "action"], "query_text_template_file": str(template)},
         ],
     )
 
@@ -66,7 +66,7 @@ def test_category_queries__vespa_uses_at_kw_placeholder(tmp_path):
     cfg = Config(
         **base,
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+            {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
         ],
     )
     assert cfg.category_query_placeholder == "@kw"
@@ -83,7 +83,7 @@ def test_category_queries__vespa_template_with_dollar_query_fails_validation(tmp
         Config(
             **base,
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+                {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
             ],
         )
 
@@ -93,7 +93,7 @@ def test_category_queries__missing_template_file_fails_validation(tmp_path):
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(tmp_path / "nope.tmpl")},
+                {"field": "genres", "values": ["comedy"], "query_text_template_file": str(tmp_path / "nope.tmpl")},
             ],
         )
 
@@ -104,18 +104,18 @@ def test_category_queries__template_without_placeholder_fails_validation(tmp_pat
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+                {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
             ],
         )
 
 
-def test_category_queries__empty_string_in_fields_fails_validation(tmp_path):
+def test_category_queries__empty_field_fails_validation(tmp_path):
     template = _write_template(tmp_path)
     with pytest.raises(ValidationError):
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": [" "], "values": ["comedy"], "query_text_template_file": str(template)},
+                {"field": " ", "values": ["comedy"], "query_text_template_file": str(template)},
             ],
         )
 
@@ -126,19 +126,20 @@ def test_category_queries__empty_string_in_values_fails_validation(tmp_path):
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"], "values": [""], "query_text_template_file": str(template)},
+                {"field": "genres", "values": [""], "query_text_template_file": str(template)},
             ],
         )
 
 
-def test_category_queries__multiple_fields_rejected(tmp_path):
+def test_category_queries__list_field_rejected(tmp_path):
+    """`field` is a single field name; a list is a config error, not a multi-field request."""
     template = _write_template(tmp_path)
-    with pytest.raises(ValidationError, match="not yet supported"):
+    with pytest.raises(ValidationError):
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
                 {
-                    "fields": ["genres", "sub_genres"],
+                    "field": ["genres", "sub_genres"],
                     "values": ["comedy"],
                     "query_text_template_file": str(template),
                 },
@@ -154,7 +155,7 @@ def test_category_queries__field_not_in_doc_fields_fails_validation(tmp_path):
         Config(
             **base,
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(template)},
+                {"field": "genres", "values": ["comedy"], "query_text_template_file": str(template)},
             ],
         )
 
@@ -169,7 +170,7 @@ def test_category_queries__template_omitted_uses_bare_values(tmp_path):
     cfg = Config(
         **_base_cfg_kwargs(tmp_path),
         category_queries=[
-            {"fields": ["genres"], "values": ["comedy", "action"]},
+            {"field": "genres", "values": ["comedy", "action"]},
         ],
     )
     assert cfg.category_queries[0].query_text_template_file is None
@@ -187,7 +188,7 @@ def test_category_queries__same_path_as_query_template_fails_validation(tmp_path
         Config(
             **base,
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(shared)},
+                {"field": "genres", "values": ["comedy"], "query_text_template_file": str(shared)},
             ],
         )
 
@@ -202,7 +203,7 @@ def test_category_queries__same_path_as_rre_query_template_fails_validation(tmp_
         Config(
             **base,
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "query_text_template_file": str(shared)},
+                {"field": "genres", "values": ["comedy"], "query_text_template_file": str(shared)},
             ],
         )
 
@@ -236,7 +237,7 @@ def test_category_queries__values_and_values_query_template_file_both_set_fails(
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"], "values": ["comedy"], "values_query_template_file": str(facet)},
+                {"field": "genres", "values": ["comedy"], "values_query_template_file": str(facet)},
             ],
         )
 
@@ -246,7 +247,7 @@ def test_category_queries__neither_values_nor_values_query_template_file_fails(t
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"]},
+                {"field": "genres"},
             ],
         )
 
@@ -256,7 +257,7 @@ def test_category_queries__values_null_with_values_query_template_file_passes(tm
     cfg = Config(
         **_base_cfg_kwargs(tmp_path),
         category_queries=[
-            {"fields": ["genres"], "values": None, "values_query_template_file": str(facet)},
+            {"field": "genres", "values": None, "values_query_template_file": str(facet)},
         ],
     )
     assert cfg.category_queries[0].values is None
@@ -268,7 +269,7 @@ def test_category_queries__values_null_and_values_query_template_file_null_fails
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"], "values": None, "values_query_template_file": None},
+                {"field": "genres", "values": None, "values_query_template_file": None},
             ],
         )
 
@@ -283,7 +284,7 @@ def test_category_queries__values_query_template_file_at_query_template_path_fai
         Config(
             **base,
             category_queries=[
-                {"fields": ["genres"], "values_query_template_file": str(shared)},
+                {"field": "genres", "values_query_template_file": str(shared)},
             ],
         )
 
@@ -298,7 +299,7 @@ def test_category_queries__values_query_template_file_at_rre_query_template_path
         Config(
             **base,
             category_queries=[
-                {"fields": ["genres"], "values_query_template_file": str(shared)},
+                {"field": "genres", "values_query_template_file": str(shared)},
             ],
         )
 
@@ -313,7 +314,7 @@ def test_category_queries__values_query_template_file_same_as_query_text_templat
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
                 {
-                    "fields": ["genres"],
+                    "field": "genres",
                     "values_query_template_file": str(shared),
                     "query_text_template_file": str(shared),
                 },
@@ -326,7 +327,7 @@ def test_category_queries__values_query_template_file_missing_path_fails(tmp_pat
         Config(
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
-                {"fields": ["genres"], "values_query_template_file": str(tmp_path / "nope.json")},
+                {"field": "genres", "values_query_template_file": str(tmp_path / "nope.json")},
             ],
         )
 
@@ -338,7 +339,7 @@ def test_check_no_empty_values__accepts_none_after_values_made_optional(tmp_path
     Config(
         **_base_cfg_kwargs(tmp_path),
         category_queries=[
-            {"fields": ["genres"], "values_query_template_file": str(facet)},
+            {"field": "genres", "values_query_template_file": str(facet)},
         ],
     )
 
@@ -357,7 +358,7 @@ def test_path_collision_validator_runs_before_placeholder_content_validator(tmp_
             **_base_cfg_kwargs(tmp_path),
             category_queries=[
                 {
-                    "fields": ["genres"],
+                    "field": "genres",
                     "values_query_template_file": str(shared),
                     "query_text_template_file": str(shared),
                 },

@@ -20,90 +20,16 @@ ENCODING = "utf-8"
 
 
 class DataStore:
-    """In-memory store for documents, queries, and ratings with O(1) indices.
+    """Hold documents, queries, and ratings with O(1) indices.
 
-    Invariants
-    ----------
-    - A ``(query_id, doc_id)`` pair is unique within ``rating_by_pair``.
-    - ``has_rating_score`` is True only if a ``Rating`` object exists for the
-      pair ``(query_id, doc_id)``.
-
-    Thread safety
-    -------------
-    Public methods are safe to call concurrently. State is protected by a
-    single ``threading.RLock`` (``self._lock``) acquired by every public
-    method that touches the four backing dicts (``docs``, ``queries``,
-    ``rating_by_pair``, ``query_text_to_query_id``) — mutators, bulk getters
-    (the ``list(...values())`` materialization is the snapshot point),
-    existence checks, ``save()``, ``load()``, and
-    ``export_all_records_with_explanation``.
-
-    Why RLock specifically: ``create_rating_score`` would have to re-enter the
-    lock through ``_add_rating`` if the latter took its own lock, and a plain
-    ``Lock`` would deadlock on the second acquisition.
-
-    What is NOT atomic: the ``has_rating_score`` → ``create_rating_score``
-    read-then-act idiom doesn't extend across the two calls. Two workers can
-    both pass ``has_rating_score`` and both call ``create_rating_score``;
-    the second writer is a no-op because ``create_rating_score`` is idempotent
-    on the ``(query_id, doc_id)`` key. The cost is at most one wasted LLM call.
-
-    Autosave pattern (read before adding a new mutator)
-    --------------------------------------------------
-    Mutators that change persistent state follow this shape::
-
-        def add_X(self, ...) -> ...:
-            snapshot: Optional[Dict[str, Any]] = None
-            with self._lock:
-                # ... validate, dedupe, mutate the backing dict ...
-                snapshot = self._capture_autosave_snapshot_if_due()
-            self._persist_autosave(snapshot)
-
-    The split — capture the snapshot under the lock, write it to disk after
-    the lock is released — is what keeps autosave I/O off the worker hot
-    path. Folding ``save()`` back inside the ``with self._lock:`` block (e.g.
-    by calling ``save()`` from a mutator helper) reintroduces the bug where
-    every concurrent worker serializes behind ``tmp_path.write_text()`` /
-    ``tmp_path.replace()``. Don't.
-
-    Private helpers used by the pattern:
-
-    - ``_capture_autosave_snapshot_if_due``: bumps the counter; if the
-      threshold is crossed, builds a JSON-ready snapshot and resets the
-      counter. Caller must hold ``self._lock``.
-    - ``_persist_autosave``: writes a captured snapshot to disk (best-effort,
-      logs on failure). Safe to call without the lock. No-op on ``None``.
-    - ``_add_rating``: returns the snapshot instead of persisting itself, so
-      ``create_rating_score`` can do the persist call after its own lock is
-      released.
-
-    ``load()`` runs the replay through the same mutators but with autosave
-    temporarily suppressed (the threshold is swapped to ``None`` for the
-    duration). Without that suppression, crossing the threshold mid-replay
-    would overwrite the on-disk cache with a partial snapshot.
-
-    Autosave durability limitation
-    ------------------------------
-    Under concurrent autosave, on-disk progress is NOT strictly monotonic.
-    Captures release the lock before the file I/O, so two autosaves race
-    on ``tmp_path.replace()`` — whichever I/O finishes last wins, even if
-    its snapshot was captured earlier. Both snapshots are internally
-    consistent (each was captured under the lock) so the file is never
-    corrupt, but the recovery point can move backwards.
-
-    How far backwards: there is no hard bound. If an early capture's write
-    stalls (slow disk, fsync contention, networked filesystem) while
-    several newer captures complete in the meantime, the stalled write
-    eventually replaces the file with its older snapshot. The practical
-    rollback equals "how many newer captures finished while my write was
-    stalled" — usually zero on a fast local filesystem, potentially more
-    on slower / contended storage.
-
-    The final ``save()`` at end of run is the authoritative state;
-    autosave is a partial-progress convenience, not a contract. If a
-    monotonic guarantee is needed later, the lightest fix is a monotonic
-    ``_autosave_seq`` plus a separate I/O lock that skips writes whose
-    seq is older than the latest persisted (~15 lines).
+    Each ``(query_id, doc_id)`` pair has at most one rating.
+    ``has_rating_score`` is true only when that ``Rating`` exists.
+    A single ``RLock`` makes public operations thread-safe at container level.
+    Getter snapshots are container-safe but contain the live mutable objects.
+    Callers must sequence operations that require consistent object fields.
+    Separate existence checks and creates are not atomic; creates are idempotent.
+    Autosave captures partial progress and may persist snapshots out of order.
+    The final ``save()`` is authoritative.
     """
 
     def __init__(self, path: Path = TMP_FILE, ignore_saved_data: bool = False, autosave_every_n_updates: Optional[int] = None):
@@ -139,17 +65,14 @@ class DataStore:
     # Existence checks
     # ────────────────────────────────────────────
     def has_document(self, doc_id: str) -> bool:
-        """Checks for document existence."""
         with self._lock:
             return doc_id in self.docs
 
     def has_query(self, query_id: str) -> bool:
-        """Checks for query existence."""
         with self._lock:
             return query_id in self.queries
 
     def has_rating_score(self, query_id: str, doc_id: str) -> bool:
-        """Checks for a rating by (query, doc) pair."""
         with self._lock:
             return (query_id, doc_id) in self.rating_by_pair
 
@@ -162,7 +85,6 @@ class DataStore:
             return self.docs.get(doc_id)
 
     def get_documents(self) -> List[Document]:
-        """Gets all documents."""
         with self._lock:
             return list(self.docs.values())
 
@@ -177,12 +99,10 @@ class DataStore:
             return self.queries.get(query_id)
 
     def get_queries(self) -> List[Query]:
-        """Gets all queries."""
         with self._lock:
             return list(self.queries.values())
 
     def get_ratings(self) -> List[Rating]:
-        """Gets all ratings."""
         with self._lock:
             return list(self.rating_by_pair.values())
 
@@ -191,7 +111,6 @@ class DataStore:
     # Mutators (all O(1) on average)
     # ────────────────────────────────────────────
     def add_document(self, doc: Document) -> None:
-        """Adds a document."""
         snapshot: Optional[Dict[str, Any]] = None
         with self._lock:
             if doc.id in self.docs:
@@ -222,12 +141,9 @@ class DataStore:
 
     def add_query(self, query_text_str: str, query_id: Optional[str] = None,
                   source: Optional[QuerySource] = None) -> Query:
-        """Adds a new query. If text is cached, returns existing Query. If id is given, it's used.
+        """Add a query or return one deduplicated by cleaned text.
 
-        `source` records how the query was asserted in this run. On a dedup hit the existing
-        query is *promoted* if the incoming source has higher priority than the stored one
-        (cached < llm < user/category) — so re-asserting a previously-cached query as e.g. a
-        user-supplied query updates its label.
+        Use a provided ID and promote an existing query to a higher-priority source.
         """
         key = clean_text(query_text_str) # Apply general filtering
         snapshot: Optional[Dict[str, Any]] = None
@@ -256,10 +172,7 @@ class DataStore:
     def _add_rating(self, rating: Rating) -> Optional[Dict[str, Any]]:
         """Add a rating; return an autosave snapshot if one is due.
 
-        Caller must hold ``self._lock`` AND, after releasing it, pass the
-        return value to :meth:`_persist_autosave`. Splitting the snapshot
-        capture from the file I/O is what keeps mutators from serializing
-        worker writes behind disk I/O when the caller's lock is still held.
+        Caller must hold ``self._lock`` and persist the result after releasing it.
         """
         if rating.query_id not in self.queries:
             log.warning(f"[add_rating] query_not_found query_id={rating.query_id}")
@@ -280,13 +193,9 @@ class DataStore:
     def create_rating_score(
         self, query_id: str, doc_id: str, score: int, explanation: Optional[str] = None
     ) -> Optional[Rating]:
-        """Create rating (if not exists) and add via ``_add_rating``.
+        """Create a rating or return the existing rating for the pair.
 
-        The ``rating_by_pair`` check + ``_add_rating`` insert pair runs under
-        the same RLock acquisition so a concurrent caller can't slip in between
-        and double-insert. The autosave file write happens AFTER the lock is
-        released — ``_add_rating`` only captures a snapshot, ``_persist_autosave``
-        writes it.
+        Lookup and insertion are atomic; autosave persistence follows lock release.
         """
         snapshot: Optional[Dict[str, Any]] = None
         rating: Optional[Rating] = None
@@ -310,19 +219,10 @@ class DataStore:
     # Autosave helpers
     # ────────────────────────────────────────────
     def _capture_autosave_snapshot_if_due(self) -> Optional[Dict[str, Any]]:
-        """Bump the mutation counter; if the autosave threshold is reached,
-        return a JSON-ready snapshot of current state (and reset the counter).
+        """Return a JSON-ready snapshot when autosave is due, otherwise None.
 
-        Caller must hold ``self._lock``. The returned dict is then written
-        to disk OUTSIDE the lock via :meth:`_persist_autosave`. This split
-        is what keeps autosave I/O off the mutator hot path — without it,
-        the outer mutator's ``with self._lock:`` block would serialize
-        worker writes behind ``tmp_path.write_text()`` / ``replace()``.
-
-        The counter is reset *before* the I/O, not after success, so a
-        failed write doesn't pin every subsequent mutation into another
-        autosave attempt. The next autosave runs after the next N mutations
-        regardless.
+        Caller must hold ``self._lock``. The counter resets when the snapshot
+        is captured, before persistence is attempted.
         """
         if self._autosave_every_n_updates is None:
             return None
@@ -341,14 +241,7 @@ class DataStore:
         }
 
     def _write_snapshot(self, snapshot: Dict[str, Any]) -> None:
-        """Atomically write a snapshot to ``self.path``. Lock-free by design.
-
-        Each write uses a uuid-suffixed tmp path so concurrent autosave
-        writers don't collide on the tmp filename; ``Path.replace()`` is
-        atomic per-FS, so whichever writer finishes last wins — both
-        snapshots are internally consistent (they were captured under the
-        lock) so either is a valid recovery point.
-        """
+        """Atomically write a snapshot through a unique temporary path."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = self.path.with_name(self.path.name + f".{uuid4().hex}.tmp")
         tmp_path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding=ENCODING)
@@ -357,12 +250,11 @@ class DataStore:
     def _persist_autosave(self, snapshot: Optional[Dict[str, Any]]) -> None:
         """Best-effort write a captured autosave snapshot. No-op if None.
 
-        Errors are logged, not raised — autosave is a durability convenience,
-        not part of the mutator's contract. The final ``save()`` at end of run
-        still has to succeed for the run to be considered successful.
+        Log write errors instead of raising them to the mutator.
         """
         if snapshot is None:
             return
+        # Calling save() while holding the lock serializes workers on file I/O.
         try:
             self._write_snapshot(snapshot)
             log.debug(f"[autosave] ok path={self.path}")
@@ -376,11 +268,7 @@ class DataStore:
     # Persistence
     # ────────────────────────────────────────────
     def save(self) -> None:
-        """Persist the current state to disk.
-
-        Holds ``self._lock`` only for the dump-to-dict step; file I/O is done
-        outside the lock so workers aren't serialized behind disk writes.
-        """
+        """Persist a locked snapshot, performing file I/O after lock release."""
         with self._lock:
             snapshot = self._build_snapshot_unlocked()
         self._write_snapshot(snapshot)
@@ -388,11 +276,7 @@ class DataStore:
     def load(self) -> None:
         """Replay a persisted store from disk.
 
-        Autosave is suppressed for the duration of the replay: mutators called
-        during load otherwise bump the same counter the user's run uses, and
-        crossing the threshold mid-replay would overwrite the on-disk cache
-        with a partial snapshot. On exit the counter is reset so the user's
-        first real mutation accounts from a clean state.
+        Suppress autosave during replay, then reset the mutation counter.
         """
         with self._lock:
             if not self.path.exists():

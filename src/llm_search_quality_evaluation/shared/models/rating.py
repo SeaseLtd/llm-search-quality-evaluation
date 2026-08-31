@@ -3,15 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict, NonNegativeInt
 
 class Rating(BaseModel):
-    """
-    Represents a rating assigned to a document for a given query.
-    """
-
-    # [Optional] apply strict model config:
-    # extra='forbid' - catch unexpected fields -> Raise
-    # validate_assignment=True - re-validate on mutation.
-    # frozen=True - immutability after creation.
-    # model_config = ConfigDict(extra='forbid', validate_assignment=True, frozen=True)
+    """Represents a rating assigned to a document for a given query."""
 
     model_config = ConfigDict(extra='ignore')
     

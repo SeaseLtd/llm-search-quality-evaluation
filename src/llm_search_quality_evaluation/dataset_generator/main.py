@@ -7,7 +7,7 @@ from llm_search_quality_evaluation.shared.utils import _to_string
 import argparse
 # -------------------------------------------------------------
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import Callable, List, Tuple
 from logging import Logger, getLogger
 
@@ -81,21 +81,10 @@ def fetch_and_add_seed_documents(config: Config, data_store: DataStore,
 
 def generate_and_add_queries_from_documents(config: Config, data_store: DataStore, llm_service: LLMService,
                                             seed_docs: List[Document]) -> None:
-    """Generate queries with the LLM service from already-fetched seed documents.
+    """Generate and store LLM queries from fetched seed documents.
 
-    Adds queries and pre-rates each generated query against its source document with the max
-    label from the relevance scale: a query produced from a doc is by definition a perfect match.
-
-    Budget accounting honors the source-priority ordering used by `get_queries_within_budget`:
-    only queries with priority <= 'llm' (i.e. user/category/llm) consume budget slots here.
-    Cached queries do *not* — they're displaceable, so a saturated cache must not block fresh
-    LLM generation.
-
-    At ``config.llm_max_workers > 1`` the per-seed-doc ``generate_queries`` calls are
-    submitted to a ``ThreadPoolExecutor`` so their network latency overlaps. Results are
-    *applied* on the main thread in original ``seed_docs`` order (not ``as_completed``
-    order) so the stored query set and budget cutoff are deterministic and identical to
-    the sequential path for the same LLM responses.
+    Each query is pre-rated against its seed document with the maximum relevance label.
+    Only sources with priority <= ``llm`` consume the generation budget.
     """
     llm_threshold = SOURCE_PRIORITY["llm"]
 
@@ -136,31 +125,27 @@ def generate_and_add_queries_from_documents(config: Config, data_store: DataStor
                 return
         return
 
-    # Parallel path: submit one future per seed doc up front so network latency
-    # overlaps, but apply results on the main thread in seed-doc order. Iterating
-    # `doc_futures` (not `as_completed`) is deliberate — application order ==
-    # seed order keeps the stored query set, budget cutoff, and dedupe behavior
-    # identical to the sequential loop for the same LLM responses.
-    #
-    # Tradeoff: budget saturation stops *applying* further results, but the
-    # `with ThreadPoolExecutor` block still calls `shutdown(wait=True)` on
-    # return, so any already-submitted futures still run to completion.
-    # That's extra latency/tokens after the budget is full — accepted in
-    # exchange for not adding cancellation machinery.
+    # Apply parallel results in seed-document order, not completion order, to keep
+    # the stored queries, budget cutoff, and deduplication deterministic.
     def _gen_queries_for_doc(doc: Document) -> Tuple[Document, LLMQueryResponse]:
         return doc, llm_service.generate_queries(doc, num_queries_per_doc, config.max_query_terms)
 
+    def _log_unobserved_failure(fut: "Future[Tuple[Document, LLMQueryResponse]]") -> None:
+        # concurrent.futures.Future does not log unretrieved exceptions, so report them here.
+        if fut.cancelled():
+            return
+        error = fut.exception()
+        if error is not None:
+            log.warning("Query generation worker failed: %s", error)
+
     with ThreadPoolExecutor(max_workers=config.llm_max_workers) as executor:
-        doc_futures = [(doc, executor.submit(_gen_queries_for_doc, doc)) for doc in seed_docs]
+        doc_futures: List[Tuple[Document, "Future[Tuple[Document, LLMQueryResponse]]"]] = []
+        for doc in seed_docs:
+            fut = executor.submit(_gen_queries_for_doc, doc)
+            fut.add_done_callback(_log_unobserved_failure)
+            doc_futures.append((doc, fut))
         for doc, fut in doc_futures:
-            # Outer guard: skip applying once the budget is full. We do not
-            # cancel the remaining in-flight futures (see comment above).
-            # Note: futures we return without awaiting do still run to
-            # completion on executor shutdown; if such a worker raises, the
-            # exception is reported via Python's Future.__del__ log path and
-            # is NOT propagated. That's consistent with the sequential path
-            # (which would never have started those LLM calls), but means
-            # post-saturation worker failures are logged-but-not-fatal.
+            # Unawaited futures still run on shutdown; callbacks log their failures.
             if _slots_filled() >= config.num_queries_needed:
                 return
             _, query_response = fut.result()  # awaited: LLM exceptions propagate
@@ -197,25 +182,10 @@ def score_docs_for_query(
     query: Query,
     documents: List[Document],
 ) -> None:
-    """Score all docs against one query, single-pair or batched per config.
+    """Score unrated documents with single or batched calls per LLM micro-batch size.
 
-    Filters out already-rated (query, doc) pairs first — same contract as the
-    pre-batching loops. When ``config.llm_micro_batch_size == 1`` the helper
-    routes through the legacy ``generate_score`` (same prompt, same schema,
-    same output as the pre-batching code path — with one narrow caveat: a
-    provider response of ``{"score": N, "explanation": ""}`` is now normalized
-    to ``explanation=None`` instead of raising ``ValueError``; see
-    :class:`LLMScoreResponse`). At 2+ it micro-batches through
-    :meth:`LLMService.generate_scores_batch`.
-
-    Duplicates in ``documents`` are dropped (first occurrence wins). The
-    pre-batching loop was naturally idempotent against duplicates because
-    ``has_rating_score`` was re-checked before *each* single-pair call; this
-    helper snapshots ``pending`` once, so we have to dedupe explicitly. Without
-    this, a duplicate in ``documents`` at ``llm_micro_batch_size > 1`` would
-    send the same id twice to the LLM (whose contract is one item per input
-    doc), trip the duplicate-/missing-id retry rule, and potentially abort the
-    run on what was originally clean input.
+    Already-rated pairs are skipped. Duplicate documents are dropped (first wins)
+    because the batch contract requires one item per input document.
     """
     pending: List[Document] = []
     seen_ids: set[str] = set()
@@ -260,16 +230,8 @@ def score_docs_for_query(
 
 
 def _run_per_query(config: Config, queries: List[Query], work_fn: Callable[[Query], None]) -> None:
-    """Run ``work_fn(query)`` for each query, sequentially or via a worker pool.
-
-    At ``llm_max_workers == 1`` runs strictly sequentially. At ``> 1`` submits
-    one future per query to a ``ThreadPoolExecutor`` and waits on each via
-    ``as_completed`` so any worker exception (``BatchScoringError``,
-    search-engine timeout, plain bug) propagates out to the caller. The
-    enclosing ``with`` block calls ``shutdown(wait=True)`` on the exception
-    path, so in-flight *and queued* workers still finish before the exception
-    reaches ``main()`` and triggers the durability save — this is
-    failure-propagating, not immediate-cancellation.
+    """Run work sequentially with one worker or in a thread pool otherwise.
+    Worker exceptions propagate to the caller.
     """
     if config.llm_max_workers == 1:
         for q in queries:
@@ -395,11 +357,8 @@ def main() -> None:
             data_store.export_all_records_with_explanation(llm_explanation_path)
             log.info(f"Dataset with LLM explanation is saved into: {llm_explanation_path}")
 
-    # TODO:
-    #  work on a better solution, instead of overwriting the corpus.json file, and maybe modify the MtebWriter with the
-    #  fetch from the search engine
+    # Replace the MTEB corpus so it includes all documents fetched from the search engine.
     if config.output_format == "mteb":
-        # copy pasted from MtebWriter
         corpus_path = Path(output_destination) / "corpus.jsonl"
         corpus_path.unlink(missing_ok=True)
         with corpus_path.open("a", encoding="utf-8") as file:

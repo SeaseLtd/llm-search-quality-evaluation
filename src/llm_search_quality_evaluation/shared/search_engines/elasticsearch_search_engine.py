@@ -9,10 +9,7 @@ from typing import List, Dict, Any, Union, Optional
 
 from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
 from llm_search_quality_evaluation.shared.models.document import Document
-from llm_search_quality_evaluation.shared.search_engines.es_opensearch_terms_agg_values import (
-    list_values_from_terms_aggregations,
-)
-from llm_search_quality_evaluation.shared.utils import clean_text
+from llm_search_quality_evaluation.shared.utils import clean_text, normalize_discovered_field_values
 
 import logging
 log = logging.getLogger(__name__)
@@ -143,7 +140,30 @@ class ElasticsearchSearchEngine(BaseSearchEngine):
             log.error(f"Elasticsearch value-discovery query failed: {e}")
             raise
 
-        return list_values_from_terms_aggregations(response.json().get("aggregations", {}), field)
+        return self._list_values_from_terms_aggregations(
+            response.json().get("aggregations", {}), field
+        )
+
+    @staticmethod
+    def _list_values_from_terms_aggregations(aggregations: Any, field: str) -> List[str]:
+        """Extract values from an Elasticsearch terms aggregation response."""
+        if not isinstance(aggregations, dict):
+            aggregations = {}
+        agg_entry = aggregations.get(field)
+        if not isinstance(agg_entry, dict) or "buckets" not in agg_entry:
+            raise ValueError(
+                f"ES/OS value-discovery: expected aggregations.{field}.buckets in response. "
+                f"Convention: the aggregation result key must equal the configured field ('{field}'); "
+                f"the aggregation's internal terms.field can be a keyword subfield "
+                f"(e.g. '{field}.keyword') without affecting this convention."
+            )
+        buckets = agg_entry["buckets"]
+        if not isinstance(buckets, list):
+            raise ValueError(
+                f"ES/OS value-discovery: aggregations.{field}.buckets must be a list. "
+                f"Keyed-bucket aggregations (`'keyed': true`) are not supported."
+            )
+        return normalize_discovered_field_values(bucket.get("key") for bucket in buckets)
 
     def _search(self, payload: Dict[str, Any]) -> List[Document]:
         """

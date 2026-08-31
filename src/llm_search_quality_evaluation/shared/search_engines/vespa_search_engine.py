@@ -151,18 +151,7 @@ class VespaSearchEngine(BaseSearchEngine):
         doc_fields: Optional[List[str]],
         start: int  = 0,
     ) -> List[Document]:
-        """
-        Fetch documents from Vespa for the purpose of query generation.
-
-        Args:
-            documents_filter: Optional list of filter dictionaries for query restriction.
-            number_of_docs: Number of documents to retrieve.
-            doc_fields: Optional list of fields to include in the response.
-            start: Optional start index to retrieve documents from.
-
-        Returns:
-            A list of `Document` instances parsed from the response.
-        """
+        """Fetch a page of Vespa documents for query generation."""
         log.info(f"Fetching {number_of_docs} documents (hits) from the search engine for query generation")
 
         payload: Dict[str, Any] = self._fetch_all_payload
@@ -186,17 +175,8 @@ class VespaSearchEngine(BaseSearchEngine):
         keyword: str = "*",
         extra_placeholders: Dict[str, str] | None = None,
     ) -> List[Document]:
-        """
-        Fetch documents from Vespa using a provided YQL template file and keyword.
-
-        Args:
-            query_template: Path to YQL template file with userInput(@kw) for parameter substitution.
-            doc_fields: Optional list of fields to retrieve. -- NOT USED NOW
-            keyword: The term to substitute into the query. Defaults to '*'.
-
-        Returns:
-            A list of `Document` instances retrieved from the engine.
-        """
+        """Run a YQL template containing ``userInput(@kw)`` with ``keyword`` bound to
+        ``@kw``; ``"*"`` binds as empty after verbatim extra-placeholder substitution."""
 
         log.info("Fetching documents (hits) based on query template for query evaluation")
 
@@ -222,23 +202,8 @@ class VespaSearchEngine(BaseSearchEngine):
 
 
     def fetch_field_values(self, values_query_template: Path | str, field: str) -> List[str]:
-        """Run a Vespa grouping query and return distinct values for ``field``.
-
-        The template contains YQL only — the engine wraps it with ``hits=0`` and
-        ``presentation.format=json`` automatically (YQL itself can't express those).
-        Vespa grouping requires the grouped field to be an ``attribute`` in the .sd schema;
-        a non-attribute field will fail at Vespa, not here.
-
-        Response shape (nested under ``group:root:0``):
-            root.children[]
-               group:root:0
-                   children[]
-                       grouplist:<field>
-                           children[]
-                               group:string:<value>
-                                   value: "<value>"
-        We do a recursive walk for any node whose ``id == 'grouplist:<field>'`` or
-        ``label == field`` and return each child's ``value``.
+        """Run a Vespa YQL grouping template and return distinct values for ``field``.
+        Grouped fields must be declared ``attribute`` in the .sd schema.
         """
         path = Path(values_query_template)
         yql = path.read_text(encoding="utf-8").strip()
@@ -347,27 +312,8 @@ class VespaSearchEngine(BaseSearchEngine):
 
     @staticmethod
     def _filter_to_where(filters: Union[None, List[Dict[str, List[str]]]]) -> str:
-        """
-        Convert a list of filter dictionaries into a Vespa YQL predicate string.
-
-        Each dictionary maps a field to a list of values:
-            - One value: field contains "value"
-            - Multiple values: (field contains "v1" OR field contains "v2" ...)
-
-        Different fields are combined with AND logic.
-
-        Args:
-            filters: List of dictionaries, each mapping a field name to a list of values.
-
-        Returns:
-            A YQL-compatible predicate string. If no filters, returns "true".
-
-        Example:
-            Input:
-                [{"title": ["Helicopter"]}, {"description": ["BOGOTA", "Colombia"]}]
-            Output:
-                'title contains "Helicopter" AND (description contains "BOGOTA" OR description contains "Colombia")'
-        """
+        """Build a YQL predicate, joining values per field with OR and fields with AND.
+        Empty or invalid filters return ``true``."""
 
         if not filters:
             # Vespa requires a WHERE clause (mandatory)
