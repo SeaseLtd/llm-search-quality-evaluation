@@ -4,6 +4,7 @@ import pytest
 from pydantic_core import ValidationError
 
 from llm_search_quality_evaluation.dataset_generator.config import Config
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 
 
 def _base_cfg_kwargs(tmp_path: Path) -> dict:
@@ -23,7 +24,7 @@ def _base_cfg_kwargs(tmp_path: Path) -> dict:
         num_queries_needed=1,
         relevance_scale="graded",
         llm_configuration_file=llm_cfg,
-        output_format="quepid",
+        output_format=OutputFormat.QUEPID,
         output_destination=tmp_path,
         save_llm_explanation=False,
         llm_explanation_destination=None,

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
-from llm_search_quality_evaluation.shared.models import Query, Document
+from llm_search_quality_evaluation.shared.models import Query, Document, OutputFormat
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
 from llm_search_quality_evaluation.shared.writers.rre_writer import RreWriter, RRE_OUTPUT_FILENAME
 
@@ -12,7 +12,7 @@ from llm_search_quality_evaluation.shared.writers.rre_writer import RreWriter, R
 @pytest.fixture
 def writer_config():
     return WriterConfig(
-        output_format='rre',
+        output_format=OutputFormat.RRE,
         index='testcore',
         id_field='id',
         query_template='only_q.json',

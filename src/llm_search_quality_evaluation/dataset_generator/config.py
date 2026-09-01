@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from llm_search_quality_evaluation.dataset_generator.llm.batch_prompt import validate_batch_prompt_template
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.shared.search_engines import SearchEngineFactory
 from llm_search_quality_evaluation.shared.writers import WriterConfig
 
@@ -92,7 +93,7 @@ class Config(BaseModel):
     llm_configuration_file: FilePath = Field(..., description="Path to the LLM configuration file.")
     max_query_terms: Optional[int] = Field(None, gt=0, description="Max number of query terms in the LLM-generated "
                                                                    "query")
-    output_format: Literal['quepid', 'rre', 'mteb', 'evaluation_dataset']
+    output_format: OutputFormat
     output_destination: Path = Field(..., description="Path to save the output dataset.")
     save_llm_explanation: bool = False
     llm_explanation_destination: Optional[Path] = Field(None, description="Path to save the LLM rating explanation")
@@ -216,11 +217,13 @@ class Config(BaseModel):
 
     @model_validator(mode="after")
     def check_rre_fields_required(self) -> "Config":
-        if self.output_format == "rre" and not self.id_field:
+        if self.output_format != OutputFormat.RRE:
+            return self
+        if not self.id_field:
             raise ValueError("id_field is required when output_format='rre'")
-        elif self.output_format == "rre" and not self.rre_query_placeholder:
+        elif not self.rre_query_placeholder:
             raise ValueError("rre_query_placeholder is required when output_format='rre'")
-        elif self.output_format == "rre" and not self.rre_query_template and not self.query_template:
+        elif not self.rre_query_template and not self.query_template:
             raise ValueError("At least one query template is required when output_format='rre'")
         return self
 

@@ -5,18 +5,26 @@ from pathlib import Path
 import pytest
 
 from llm_search_quality_evaluation.shared.data_store import DataStore
-from llm_search_quality_evaluation.shared.models import Document
+from llm_search_quality_evaluation.shared.models import Document, OutputFormat
 from llm_search_quality_evaluation.shared.models.evaluation_dataset_format import EvaluationDataset
 from llm_search_quality_evaluation.shared.writers.evaluation_dataset_writer import (
     OUTPUT_FILENAME,
     EvaluationDatasetWriter,
 )
 from llm_search_quality_evaluation.shared.writers.writer_config import WriterConfig
+from llm_search_quality_evaluation.shared.writers.writer_factory import WriterFactory
 
 
 @pytest.fixture
 def writer_config():
-    return WriterConfig(output_format="evaluation_dataset", index="testcore")
+    return WriterConfig(output_format=OutputFormat.EVALUATION_DATASET, index="testcore")
+
+
+def test_factory_builds_evaluation_dataset_writer(writer_config: WriterConfig):
+    writer = WriterFactory.build(writer_config)
+
+    assert writer_config.output_format is OutputFormat.EVALUATION_DATASET
+    assert isinstance(writer, EvaluationDatasetWriter)
 
 
 @pytest.fixture
