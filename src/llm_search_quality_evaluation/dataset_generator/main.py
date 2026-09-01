@@ -21,6 +21,7 @@ from llm_search_quality_evaluation.dataset_generator.llm import (
 )
 from llm_search_quality_evaluation.dataset_generator.llm.llm_provider_factory import LazyLLM
 from llm_search_quality_evaluation.shared.models import Document, Query
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 from llm_search_quality_evaluation.shared.models.query import SOURCE_PRIORITY
 from llm_search_quality_evaluation.shared.writers import WriterFactory, AbstractWriter, WriterConfig
 from llm_search_quality_evaluation.shared.search_engines import SearchEngineFactory, BaseSearchEngine
@@ -358,7 +359,7 @@ def main() -> None:
             log.info(f"Dataset with LLM explanation is saved into: {llm_explanation_path}")
 
     # Replace the MTEB corpus so it includes all documents fetched from the search engine.
-    if config.output_format == "mteb":
+    if config.output_format == OutputFormat.MTEB:
         corpus_path = Path(output_destination) / "corpus.jsonl"
         corpus_path.unlink(missing_ok=True)
         with corpus_path.open("a", encoding="utf-8") as file:

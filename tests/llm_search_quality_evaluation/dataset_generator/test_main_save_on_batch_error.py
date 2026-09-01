@@ -9,6 +9,7 @@ import pytest
 from llm_search_quality_evaluation.dataset_generator import main as main_mod
 from llm_search_quality_evaluation.dataset_generator.config import Config
 from llm_search_quality_evaluation.dataset_generator.llm import BatchScoringError
+from llm_search_quality_evaluation.shared.models.output_format import OutputFormat
 
 
 class DummyWriter:
@@ -32,7 +33,7 @@ def _build_cfg(tmp_path: Path) -> Config:
         num_queries_needed=1,
         relevance_scale="binary",
         llm_configuration_file=llm_cfg,
-        output_format="quepid",
+        output_format=OutputFormat.QUEPID,
         output_destination=tmp_path,
         save_llm_explanation=False,
         llm_explanation_destination=None,

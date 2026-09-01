@@ -9,7 +9,7 @@ from typing import List
 
 from llm_search_quality_evaluation.dataset_generator import main as main_mod
 from llm_search_quality_evaluation.dataset_generator.config import Config
-from llm_search_quality_evaluation.shared.models import Document
+from llm_search_quality_evaluation.shared.models import Document, OutputFormat
 
 
 def llm_cfg(tmp_path: Path) -> Path:
@@ -38,7 +38,7 @@ def make_config(tmp_path: Path, **overrides) -> Config:
         num_queries_needed=10,
         relevance_scale="graded",
         llm_configuration_file=llm_cfg(tmp_path),
-        output_format="quepid",
+        output_format=OutputFormat.QUEPID,
         output_destination=tmp_path,
         save_llm_explanation=False,
         llm_explanation_destination=None,
