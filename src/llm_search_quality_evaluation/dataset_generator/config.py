@@ -71,7 +71,7 @@ class Config(BaseModel):
         None,
         description="Path pointing to a template file for queries with a placeholder for keywords."
     )
-    search_engine_type: Literal['solr', 'elasticsearch', 'opensearch', 'vespa']
+    search_engine_type: Literal['solr', 'elasticsearch', 'opensearch', 'vespa', 'datafari']
     collection_name: str = Field(..., description="Name of the index/collection of the search engine")
     vespa_schema: Optional[str] = Field(None, description="Schema name for Vespa search engine")
     search_engine_url: HttpUrl = Field(..., description="Search engine URL")
@@ -212,6 +212,8 @@ class Config(BaseModel):
         if self.search_engine_type == "vespa":
             assert self.vespa_schema is not None
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.vespa_schema + "/"))
+        if self.search_engine_type == "datafari":
+            return HttpUrl(self.search_engine_url.encoded_string() + "/")  # Datafari uses the base URL without collection name for searching
         else:
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.collection_name + "/"))
 

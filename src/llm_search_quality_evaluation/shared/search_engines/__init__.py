@@ -11,5 +11,6 @@ __all__ = [
     "SolrSearchEngine",
     "ElasticsearchSearchEngine",
     "VespaSearchEngine",
-    "BaseSearchEngine"
+    "BaseSearchEngine",
+    "DatafariSearchEngine"
 ]

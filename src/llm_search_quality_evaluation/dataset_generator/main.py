@@ -294,7 +294,8 @@ def main() -> None:
     )
     search_engine: BaseSearchEngine = SearchEngineFactory.build(
         search_engine_type=config.search_engine_type,
-        endpoint=config.search_engine_collection_endpoint
+        endpoint=config.search_engine_collection_endpoint,
+        collection_name=config.collection_name,
     )
     llm: LazyLLM = LLMServiceFactory.build_lazy(LLMConfig.load(config.llm_configuration_file))
     service: LLMService = LLMService(chat_model=llm)
