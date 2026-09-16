@@ -71,7 +71,7 @@ class Config(BaseModel):
         None,
         description="Path pointing to a template file for queries with a placeholder for keywords."
     )
-    search_engine_type: Literal['solr', 'elasticsearch', 'opensearch', 'vespa']
+    search_engine_type: Literal['solr', 'elasticsearch', 'opensearch', 'vespa', 'datafari']
     collection_name: str = Field(..., description="Name of the index/collection of the search engine")
     vespa_schema: Optional[str] = Field(None, description="Schema name for Vespa search engine")
     search_engine_url: HttpUrl = Field(..., description="Search engine URL")
@@ -204,7 +204,8 @@ class Config(BaseModel):
 
     @property
     def search_engine_collection_endpoint(self) -> HttpUrl:
-        """Collection endpoint URL: vespa_schema for Vespa, collection_name otherwise.
+        """Collection endpoint URL: unchanged for Datafari, vespa_schema for Vespa,
+        collection_name otherwise.
 
         ``default_vespa_schema_to_collection_name`` has already resolved vespa_schema
         at config load, so no fallback is applied here.
@@ -212,6 +213,8 @@ class Config(BaseModel):
         if self.search_engine_type == "vespa":
             assert self.vespa_schema is not None
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.vespa_schema + "/"))
+        if self.search_engine_type == "datafari":
+            return self.search_engine_url
         else:
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.collection_name + "/"))
 

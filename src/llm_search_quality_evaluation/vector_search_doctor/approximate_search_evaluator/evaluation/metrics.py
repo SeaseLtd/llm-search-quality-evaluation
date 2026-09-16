@@ -1,3 +1,5 @@
+import logging
+
 import ranx
 
 from llm_search_quality_evaluation.vector_search_doctor.approximate_search_evaluator.evaluation.models import EvaluationResult
@@ -9,6 +11,8 @@ DEFAULT_METRICS: list[str] = [
     "precision@10",
     "recall@10",
 ]
+
+log = logging.getLogger(__name__)
 
 SUPPORTED_METRIC_PREFIXES: set[str] = {
     "hits",
@@ -61,6 +65,18 @@ def evaluate_metrics(
     unsupported = [m for m in metrics if not is_supported_metric(m)]
     if unsupported:
         raise ValueError(f"Unsupported metric(s): {unsupported}")
+
+    # ranx.Run.from_dict cannot construct a run with no document IDs.
+    if not any(run.values()):
+        log.warning("No documents retrieved for any query; all retrieval metrics are zero.")
+        return EvaluationResult(
+            metrics=metrics,
+            aggregate={metric: 0.0 for metric in metrics},
+            per_query={
+                query: {metric: 0.0 for metric in metrics}
+                for query in sorted(qrels)
+            },
+        )
 
     qrels_obj = ranx.Qrels.from_dict(qrels)
     qrels_obj.set_relevance_level(relevance_threshold)

@@ -49,7 +49,7 @@ uv cache clean
 ## Running Dataset Generator
 
 Before running the command below, you need to have running search engine instance 
-(`solr`/`opensearch`/`elasticsearch`/`vespa`). 
+(`solr`/`opensearch`/`elasticsearch`/`vespa`/`datafari`). 
 
 For a detailed description to fill your configuration file (e.g., 
 [Config](examples/configs/dataset_generator/dataset_generator_config.yaml)) you can look at the Dataset Generator 

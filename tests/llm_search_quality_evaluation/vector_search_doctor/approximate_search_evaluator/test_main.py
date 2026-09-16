@@ -66,6 +66,7 @@ def _make_config(
 
     return types.SimpleNamespace(
         search_engine_type="solr",
+        collection_name="testcore",
         search_engine_collection_endpoint="http://localhost:8983/solr/testcore/",
         evaluation_dataset_path=dataset_path,
         embeddings_file=embeddings_file,
@@ -78,6 +79,26 @@ def _make_config(
 
 
 class TestMainOrchestration:
+    def test_main_passes_datafari_collection(self, monkeypatch, tmp_path):
+        dataset_path = tmp_path / "dataset.json.gz"
+        _write_dataset(dataset_path, _make_dataset())
+        config = _make_config(tmp_path, dataset_path, tmp_path / "output")
+        config.search_engine_type = "datafari"
+        config.collection_name = "VectorMain"
+        config.search_engine_collection_endpoint = "https://example.com/search"
+        build = MagicMock(return_value=_stub_engine(2))
+        monkeypatch.setattr(main_mod, "Config", types.SimpleNamespace(load=lambda _: config))
+        monkeypatch.setattr(main_mod, "_parse_args", lambda: types.SimpleNamespace(config="ignored.yaml", verbose=False))
+        monkeypatch.setattr(main_mod, "SearchEngineFactory", types.SimpleNamespace(build=build))
+
+        main_mod.main()
+
+        build.assert_called_once_with(
+            search_engine_type="datafari",
+            endpoint="https://example.com/search",
+            collection_name="VectorMain",
+        )
+
     def test_main_writes_results_file(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         dataset = _make_dataset(num_queries=2)
         dataset_path = tmp_path / "evaluation_dataset.json.gz"

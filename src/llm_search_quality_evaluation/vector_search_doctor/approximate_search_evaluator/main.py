@@ -66,6 +66,7 @@ def main() -> None:
     search_engine = SearchEngineFactory.build(
         search_engine_type=config.search_engine_type,
         endpoint=config.search_engine_collection_endpoint,
+        collection_name=config.collection_name,
     )
 
     dataset: EvaluationDataset = EvaluationDataset.load(config.evaluation_dataset_path)
