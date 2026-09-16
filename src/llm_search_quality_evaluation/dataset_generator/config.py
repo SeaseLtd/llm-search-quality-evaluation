@@ -204,7 +204,8 @@ class Config(BaseModel):
 
     @property
     def search_engine_collection_endpoint(self) -> HttpUrl:
-        """Collection endpoint URL: vespa_schema for Vespa, collection_name otherwise.
+        """Collection endpoint URL: unchanged for Datafari, vespa_schema for Vespa,
+        collection_name otherwise.
 
         ``default_vespa_schema_to_collection_name`` has already resolved vespa_schema
         at config load, so no fallback is applied here.
@@ -213,7 +214,7 @@ class Config(BaseModel):
             assert self.vespa_schema is not None
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.vespa_schema + "/"))
         if self.search_engine_type == "datafari":
-            return HttpUrl(self.search_engine_url.encoded_string() + "/")  # Datafari uses the base URL without collection name for searching
+            return self.search_engine_url
         else:
             return HttpUrl(urljoin(self.search_engine_url.encoded_string() + "/", self.collection_name + "/"))
 

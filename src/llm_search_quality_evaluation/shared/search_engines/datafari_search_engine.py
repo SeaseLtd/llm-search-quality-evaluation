@@ -4,6 +4,7 @@ from pydantic import HttpUrl
 from requests.exceptions import RequestException
 from typing import List, Dict, Any, Union
 from llm_search_quality_evaluation.shared.search_engines.search_engine_base import BaseSearchEngine
+from llm_search_quality_evaluation.shared.search_engines.solr_search_engine import SolrSearchEngine
 from llm_search_quality_evaluation.shared.models.document import Document
 from llm_search_quality_evaluation.shared.utils import clean_text
 
@@ -41,7 +42,7 @@ class DatafariSearchEngine(BaseSearchEngine):
         }
 
     def _get_total_hits(self, payload: Dict[str, Any]) -> int:
-        search_url = self.endpoint.encoded_string()
+        search_url = self.endpoint.encoded_string().rstrip("/")
         payload = payload.copy()
 
         # Force datafari to return a JSON formatted response
@@ -141,6 +142,29 @@ class DatafariSearchEngine(BaseSearchEngine):
 
         return self._search(payload)
 
+    def fetch_field_values(self, values_query_template: Path | str, field: str) -> List[str]:
+        """Run a Solr-style facet template through the Datafari endpoint."""
+        payload = self._parse_query_template(values_query_template)
+        payload["wt"] = "json"
+        payload["collection"] = self.collection_name
+        try:
+            response = requests.get(
+                self.endpoint.encoded_string().rstrip("/"),
+                headers=self.HEADERS,
+                params=payload,
+                timeout=self.DEFAULT_TIMEOUT,
+            )
+            response.raise_for_status()
+            body = response.json()
+        except RequestException as e:
+            log.error("Datafari value-discovery query failed: %s", e)
+            raise
+
+        try:
+            return SolrSearchEngine._list_values_from_facet_fields(body, field)
+        except ValueError as e:
+            raise ValueError(f"Datafari value-discovery: {e}") from e
+
     def _search(self, payload: Dict[str, Any],) -> List[Document]:
         """
         Executes a datafari search using a JSON payload and parses the results.
@@ -171,7 +195,12 @@ class DatafariSearchEngine(BaseSearchEngine):
             log.error(f"Datafari query failed: {e}\n")
             raise
 
-        hits = response.json().get("response", {}).get("docs", [])
+        body = response.json()
+        if not isinstance(body, dict) or not isinstance(body.get("response"), dict):
+            raise ValueError("Datafari search: expected a JSON object containing a response object")
+        hits = body["response"].get("docs")
+        if not isinstance(hits, list) or any(not isinstance(hit, dict) for hit in hits):
+            raise ValueError("Datafari search: expected response.docs to be a list of document objects")
         result = []
         for hit in hits:
             doc_id = hit.get(self.UNIQUE_KEY)
@@ -215,4 +244,3 @@ class DatafariSearchEngine(BaseSearchEngine):
             return [str(value)]
         except Exception as e:
             raise ValueError(f"Failed to normalize value: {value}") from e
-

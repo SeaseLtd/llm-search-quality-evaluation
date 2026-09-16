@@ -96,6 +96,7 @@ def _make_config(tmp_path: Path, dataset_path: Path, output_path: Path, engine_t
     query_template.write_text('{"query": "$query"}')
     return types.SimpleNamespace(
         search_engine_type=engine_type,
+        collection_name="testcore",
         search_engine_collection_endpoint=f"http://localhost:8983/{engine_type}/testcore/",
         evaluation_dataset_path=dataset_path,
         embeddings_file=None,

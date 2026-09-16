@@ -12,6 +12,16 @@ def config(resource_folder):
     return Config.load(resource_folder / "good_config_solr.yaml")
 
 
+@pytest.mark.parametrize("suffix", ["", "/"])
+def test_datafari_endpoint_preserves_configured_url(resource_folder, suffix):
+    config = Config.load(resource_folder / "good_config_datafari.yaml")
+    config.search_engine_url = HttpUrl(
+        "https://example.com/Datafari/rest/v2.0/search/vector" + suffix
+    )
+
+    assert config.search_engine_collection_endpoint == config.search_engine_url
+
+
 def test_good_config__expects__all_parameters_read(config):
     assert config.query_template == Path('tests/resources/template_solr.json')
     assert config.search_engine_type == "solr"

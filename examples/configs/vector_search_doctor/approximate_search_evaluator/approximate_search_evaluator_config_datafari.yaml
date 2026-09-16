@@ -1,0 +1,27 @@
+# Search engine type.
+search_engine_type: "datafari"
+
+# Replace with your Datafari search endpoint, without a trailing slash.
+search_engine_url: "https://my.datafari.com/Datafari/rest/v2.0/search/vector"
+
+# Collection sent as a request parameter, not appended to the endpoint URL.
+collection_name: "VectorMain"
+
+# Field containing the document identifier.
+id_field: "id"
+
+# Solr-compatible vector query template. Adapt its vector field name to your
+# collection and keep its topK aligned with top_k below.
+query_template: "examples/templates/template_datafari.json"
+
+# Query embeddings must use the same model and dimensions as the indexed vectors.
+embeddings_file: "resources/embeddings/queries_embeddings.jsonl"
+
+# Evaluation dataset containing queries and relevance judgments.
+evaluation_dataset_path: "resources/evaluation_dataset.json.gz"
+
+metrics: ["ndcg@10", "map@10", "mrr@10", precision@10, recall@10]
+top_k: 10
+
+# Output folder for the evaluation report.
+output_destination: "resources/approximate_search_evaluation_datafari"

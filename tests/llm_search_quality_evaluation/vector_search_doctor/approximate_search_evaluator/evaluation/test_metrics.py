@@ -49,6 +49,16 @@ class TestIsSupportedMetric:
 
 
 class TestEvaluateMetrics:
+    @pytest.mark.parametrize("run", [{}, {"q1": {}, "q2": {}}])
+    def test_empty_run_scores_zero(self, run, caplog):
+        qrels = {"q2": {"doc2": 1}, "q1": {"doc1": 1}}
+        result = evaluate_metrics(qrels, run, DEFAULT_METRICS, relevance_threshold=1)
+        zeros = {metric: 0.0 for metric in DEFAULT_METRICS}
+        assert result.aggregate == zeros
+        assert result.per_query == {"q1": zeros, "q2": zeros}
+        assert result.metrics == DEFAULT_METRICS
+        assert "No documents retrieved" in caplog.text
+
     @pytest.fixture
     def perfect_ranking(self) -> tuple[dict, dict]:
         qrels = {
